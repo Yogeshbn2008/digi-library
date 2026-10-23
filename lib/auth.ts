@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { randomBytes } from "node:crypto";
 import { RowDataPacket } from "mysql2";
 import { pool } from "./db";
+import { redirect } from "next/navigation";
 
 const COOKIE_NAME = "admin_session";
 const MAX_AGE = 60 * 60 * 8; // 8 hours
@@ -53,4 +54,9 @@ export async function destroySession() {
   }
   const store = await cookies();
   store.delete(COOKIE_NAME);
+}
+export async function requireAdmin() {
+  const admin = await getCurrentAdmin();
+  if (!admin) redirect("/admin/login");
+  return admin;
 }

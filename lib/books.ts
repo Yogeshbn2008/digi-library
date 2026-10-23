@@ -38,3 +38,10 @@ export async function getGenres() {
   );
   return rows.map((r) => r.genre as string);
 }
+
+export async function getBookById(id: number) {
+  const [rows] = await pool.query<Book[]>("SELECT * FROM books WHERE id = ?", [
+    id,
+  ]);
+  return rows[0] ?? null;
+}
