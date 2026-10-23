@@ -23,3 +23,12 @@ CREATE TABLE IF NOT EXISTS loans (
   issued_by INT NOT NULL,
   FOREIGN KEY (book_id) REFERENCES books(id)
 );
+
+CREATE TABLE IF NOT EXISTS digilibrary.admins (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(100) NOT NULL,
+  username VARCHAR(50) NOT NULL UNIQUE,
+  password_hash VARCHAR(255) NOT NULL,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  active_session_id VARCHAR(64) NULL
+);
