@@ -1,16 +1,20 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import { getCurrentAdmin, requireAdmin } from "@/lib/auth";
-import { getBooks } from "@/lib/books";
+import { requireAdmin } from "@/lib/auth";
+import { getAdminBooks, getOverdue } from "@/lib/loans";
 import { logout } from "./actions";
 import { addBook, deleteBook } from "./book-actions";
+import { returnBook } from "./loan-actions";
 import DeleteButton from "@/components/DeleteButton";
 
 type SearchParams = Promise<{ msg?: string; error?: string }>;
 
+const fmt = (d: Date | null) =>
+  d ? new Date(d).toLocaleDateString("en-IN") : "N/A";
+
 export default function AdminHome({ searchParams }: { searchParams: SearchParams }) {
   return (
-    <main className="mx-auto max-w-4xl p-6">
+    <main className="mx-auto max-w-5xl p-6">
       <h1 className="mb-2 text-2xl font-bold">Admin Dashboard</h1>
       <Suspense fallback={<p className="text-gray-500">Loading...</p>}>
         <AdminContent searchParams={searchParams} />
@@ -22,7 +26,7 @@ export default function AdminHome({ searchParams }: { searchParams: SearchParams
 async function AdminContent({ searchParams }: { searchParams: SearchParams }) {
   const admin = await requireAdmin();
   const { msg, error } = await searchParams;
-  const books = await getBooks({});
+  const [books, overdue] = await Promise.all([getAdminBooks(), getOverdue()]);
 
   return (
     <>
@@ -36,7 +40,23 @@ async function AdminContent({ searchParams }: { searchParams: SearchParams }) {
       {msg && <p className="mb-3 rounded bg-green-100 p-2 text-sm text-green-800">{msg}</p>}
       {error && <p className="mb-3 rounded bg-red-100 p-2 text-sm text-red-700">{error}</p>}
 
-      <h2 className="mb-2 mt-6 text-lg font-semibold">Add a book</h2>
+      {overdue.length > 0 && (
+        <section className="mb-8 rounded border border-red-300 p-4">
+          <h2 className="mb-2 text-lg font-semibold text-red-700">
+            Overdue ({overdue.length})
+          </h2>
+          <ul className="space-y-1 text-sm">
+            {overdue.map((b) => (
+              <li key={b.id}>
+                <strong>{b.title}</strong> — {b.borrower_name ?? "unknown borrower"}
+                {b.registration_no ? ` (${b.registration_no})` : ""}, was due {fmt(b.due_date)}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      <h2 className="mb-2 text-lg font-semibold">Add a book</h2>
       <form action={addBook} className="mb-8 grid gap-2 sm:grid-cols-2">
         <input name="title" placeholder="Title" required maxLength={255} className="rounded border p-2" />
         <input name="author" placeholder="Author" required maxLength={255} className="rounded border p-2" />
@@ -51,27 +71,48 @@ async function AdminContent({ searchParams }: { searchParams: SearchParams }) {
           <thead>
             <tr className="border-b">
               <th className="p-2">Title</th>
-              <th className="p-2">Author</th>
               <th className="p-2">Genre</th>
               <th className="p-2">Status</th>
+              <th className="p-2">Borrower</th>
+              <th className="p-2">Due</th>
               <th className="p-2">Actions</th>
             </tr>
           </thead>
           <tbody>
             {books.map((b) => (
               <tr key={b.id} className="border-b">
-                <td className="p-2">{b.title}</td>
-                <td className="p-2">{b.author}</td>
+                <td className="p-2">
+                  {b.title}
+                  <div className="text-xs text-gray-500">{b.author}</div>
+                </td>
                 <td className="p-2">{b.genre}</td>
                 <td className="p-2">{b.status}</td>
-                <td className="flex gap-3 p-2">
-                  <Link href={`/admin/books/${b.id}/edit`} className="text-blue-600 underline">
-                    Edit
-                  </Link>
-                  <form action={deleteBook}>
-                    <input type="hidden" name="id" value={b.id} />
-                    <DeleteButton />
-                  </form>
+                <td className="p-2">
+                  {b.borrower_name
+                    ? `${b.borrower_name} (${b.registration_no})`
+                    : "—"}
+                </td>
+                <td className="p-2">{b.status === "borrowed" ? fmt(b.due_date) : "—"}</td>
+                <td className="p-2">
+                  <div className="flex flex-wrap items-center gap-3">
+                    {b.status === "available" ? (
+                      <Link href={`/admin/books/${b.id}/issue`} className="text-green-700 underline">
+                        Issue
+                      </Link>
+                    ) : (
+                      <form action={returnBook}>
+                        <input type="hidden" name="bookId" value={b.id} />
+                        <button className="text-orange-600 underline">Return</button>
+                      </form>
+                    )}
+                    <Link href={`/admin/books/${b.id}/edit`} className="text-blue-600 underline">
+                      Edit
+                    </Link>
+                    <form action={deleteBook}>
+                      <input type="hidden" name="id" value={b.id} />
+                      <DeleteButton />
+                    </form>
+                  </div>
                 </td>
               </tr>
             ))}
