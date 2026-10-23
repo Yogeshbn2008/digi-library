@@ -1,10 +1,20 @@
+import { Suspense } from "react";
 import { getBooks, getGenres } from "@/lib/books";
 
-export default async function Home({
-  searchParams,
-}: {
-  searchParams: Promise<{ q?: string; genre?: string }>;
-}) {
+type SearchParams = Promise<{ q?: string; genre?: string }>;
+
+export default function Home({ searchParams }: { searchParams: SearchParams }) {
+  return (
+    <main className="mx-auto max-w-4xl p-6">
+      <h1 className="mb-4 text-2xl font-bold">Hostel Library</h1>
+      <Suspense fallback={<p className="text-gray-500">Loading books...</p>}>
+        <Catalog searchParams={searchParams} />
+      </Suspense>
+    </main>
+  );
+}
+
+async function Catalog({ searchParams }: { searchParams: SearchParams }) {
   const { q, genre } = await searchParams;
   const [books, genres] = await Promise.all([
     getBooks({ q, genre }),
@@ -12,9 +22,7 @@ export default async function Home({
   ]);
 
   return (
-    <main className="mx-auto max-w-4xl p-6">
-      <h1 className="mb-4 text-2xl font-bold">Hostel Library</h1>
-
+    <>
       <form className="mb-6 flex gap-2">
         <input
           name="q"
@@ -59,6 +67,6 @@ export default async function Home({
           </li>
         ))}
       </ul>
-    </main>
+    </>
   );
 }
