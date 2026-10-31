@@ -57,6 +57,9 @@ async function AdminContent({ searchParams }: { searchParams: SearchParams }) {
       )}
 
       <h2 className="mb-2 text-lg font-semibold">Add a book</h2>
+            <Link href="/admin/import" className="mb-6 inline-block text-blue-600 underline">
+        Import books from CSV
+      </Link>
       <form action={addBook} className="mb-8 grid gap-2 sm:grid-cols-2">
         <input name="title" placeholder="Title" required maxLength={255} className="rounded border p-2" />
         <input name="author" placeholder="Author" required maxLength={255} className="rounded border p-2" />
@@ -95,11 +98,12 @@ async function AdminContent({ searchParams }: { searchParams: SearchParams }) {
                 <td className="p-2">{b.status === "borrowed" ? fmt(b.due_date) : "—"}</td>
                 <td className="p-2">
                   <div className="flex flex-wrap items-center gap-3">
-                    {b.status === "available" ? (
+                                        {b.status === "available" && (
                       <Link href={`/admin/books/${b.id}/issue`} className="text-green-700 underline">
                         Issue
                       </Link>
-                    ) : (
+                    )}
+                    {b.status === "borrowed" && (
                       <form action={returnBook}>
                         <input type="hidden" name="bookId" value={b.id} />
                         <button className="text-orange-600 underline">Return</button>

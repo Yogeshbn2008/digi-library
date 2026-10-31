@@ -7,7 +7,7 @@ export interface AdminBook extends RowDataPacket {
   title: string;
   author: string;
   genre: string;
-  status: "available" | "borrowed";
+  status: "available" | "borrowed" | "lost" | "unverified";
   due_date: Date | null;
   borrower_name: string | null;
   registration_no: string | null;

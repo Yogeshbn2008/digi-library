@@ -3,11 +3,15 @@ import { pool } from "./db";
 
 export interface Book extends RowDataPacket {
   id: number;
+  book_code: string | null;
   title: string;
-  author: string;
+  author: string | null;
   genre: string;
   isbn: string | null;
-  status: "available" | "borrowed";
+  price: string | null;
+  donated: number;
+  remarks: string | null;
+  status: "available" | "borrowed" | "lost" | "unverified";
   due_date: Date | null;
 }
 
@@ -20,8 +24,8 @@ export async function getBooks({ q, genre }: { q?: string; genre?: string }) {
     params.push(genre);
   }
   if (q) {
-    conditions.push("(title LIKE ? OR author LIKE ?)");
-    params.push(`%${q}%`, `%${q}%`);
+    conditions.push("(title LIKE ? OR author LIKE ? OR book_code LIKE ?)");
+    params.push(`%${q}%`, `%${q}%`, `%${q}%`);
   }
 
   const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";

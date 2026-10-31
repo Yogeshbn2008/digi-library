@@ -3,13 +3,17 @@ USE digilibrary;
 
 CREATE TABLE IF NOT EXISTS books (
   id INT AUTO_INCREMENT PRIMARY KEY,
+  book_code VARCHAR(30) NULL,
   title VARCHAR(255) NOT NULL,
-  author VARCHAR(255) NOT NULL,
+  author VARCHAR(255) NULL,
   genre VARCHAR(100) NOT NULL,
   isbn VARCHAR(20),
-  status ENUM('available','borrowed') NOT NULL DEFAULT 'available',
+  price DECIMAL(8,2) NULL,
+  donated TINYINT(1) NOT NULL DEFAULT 0,
+  remarks VARCHAR(255) NULL,
+  status ENUM('available','borrowed','lost','unverified') NOT NULL DEFAULT 'available',
   due_date DATE NULL,
-  UNIQUE KEY uniq_title_author (title, author)
+  UNIQUE KEY uniq_book_code (book_code)
 );
 
 CREATE TABLE IF NOT EXISTS loans (

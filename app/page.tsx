@@ -47,21 +47,24 @@ async function Catalog({ searchParams }: { searchParams: SearchParams }) {
 
       <ul className="space-y-3">
         {books.map((b) => (
-          <li key={b.id} className="rounded border p-4">
+                    <li key={b.id} className="rounded border p-4">
             <div className="font-semibold">{b.title}</div>
             <div className="text-sm text-gray-600">
-              {b.author} · {b.genre}
+              {b.author ?? "Author not listed"} · {b.genre}
             </div>
+            <div className="text-xs text-gray-500">Code: {b.book_code ?? "N/A"}</div>
             <div className="mt-1 text-sm">
               {b.status === "available" ? (
                 <span className="text-green-600">Available</span>
-              ) : (
+              ) : b.status === "borrowed" ? (
                 <span className="text-red-600">
                   Borrowed · due{" "}
                   {b.due_date
                     ? new Date(b.due_date).toLocaleDateString("en-IN")
                     : "N/A"}
                 </span>
+              ) : (
+                <span className="text-gray-500">Not available</span>
               )}
             </div>
           </li>
