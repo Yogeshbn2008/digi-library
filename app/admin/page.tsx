@@ -1,13 +1,19 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { requireAdmin } from "@/lib/auth";
-import { getAdminBooks, getOverdue } from "@/lib/loans";
+import { searchAdminBooks, getOverdue } from "@/lib/loans";
 import { logout } from "./actions";
 import { addBook, deleteBook } from "./book-actions";
 import { returnBook } from "./loan-actions";
 import DeleteButton from "@/components/DeleteButton";
+import Pager from "@/components/Pager";
 
-type SearchParams = Promise<{ msg?: string; error?: string }>;
+type SearchParams = Promise<{
+  msg?: string;
+  error?: string;
+  q?: string;
+  page?: string;
+}>;
 
 const fmt = (d: Date | null) =>
   d ? new Date(d).toLocaleDateString("en-IN") : "N/A";
@@ -25,8 +31,12 @@ export default function AdminHome({ searchParams }: { searchParams: SearchParams
 
 async function AdminContent({ searchParams }: { searchParams: SearchParams }) {
   const admin = await requireAdmin();
-  const { msg, error } = await searchParams;
-  const [books, overdue] = await Promise.all([getAdminBooks(), getOverdue()]);
+  const { msg, error, q, page } = await searchParams;
+  const [result, overdue] = await Promise.all([
+    searchAdminBooks({ q, page: Number(page) || 1 }),
+    getOverdue(),
+  ]);
+  const books = result.books;
 
   return (
     <>
@@ -56,25 +66,36 @@ async function AdminContent({ searchParams }: { searchParams: SearchParams }) {
         </section>
       )}
 
-      <h2 className="mb-2 text-lg font-semibold">Add a book</h2>
-            <Link href="/admin/import" className="mb-6 inline-block text-blue-600 underline">
+      <Link href="/admin/import" className="mb-6 inline-block text-blue-600 underline">
         Import books from CSV
       </Link>
+
+      <h2 className="mb-2 text-lg font-semibold">Add a book</h2>
       <form action={addBook} className="mb-8 grid gap-2 sm:grid-cols-2">
         <input name="title" placeholder="Title" required maxLength={255} className="rounded border p-2" />
         <input name="author" placeholder="Author" required maxLength={255} className="rounded border p-2" />
-        <input name="genre" placeholder="Genre" required maxLength={100} className="rounded border p-2" />
+        <input name="genre" placeholder="Category" required maxLength={100} className="rounded border p-2" />
         <input name="isbn" placeholder="ISBN (optional)" maxLength={20} className="rounded border p-2" />
         <button className="rounded bg-black p-2 text-white sm:col-span-2">Add book</button>
       </form>
 
-      <h2 className="mb-2 text-lg font-semibold">All books ({books.length})</h2>
+      <h2 className="mb-2 text-lg font-semibold">All books ({result.total})</h2>
+      <form className="mb-3 flex gap-2">
+        <input
+          name="q"
+          defaultValue={q}
+          placeholder="Search title, author, code, borrower or registration no."
+          className="flex-1 rounded border p-2"
+        />
+        <button className="rounded bg-black px-4 text-white">Search</button>
+      </form>
+
       <div className="overflow-x-auto">
         <table className="w-full text-left text-sm">
           <thead>
             <tr className="border-b">
               <th className="p-2">Title</th>
-              <th className="p-2">Genre</th>
+              <th className="p-2">Category</th>
               <th className="p-2">Status</th>
               <th className="p-2">Borrower</th>
               <th className="p-2">Due</th>
@@ -86,7 +107,9 @@ async function AdminContent({ searchParams }: { searchParams: SearchParams }) {
               <tr key={b.id} className="border-b">
                 <td className="p-2">
                   {b.title}
-                  <div className="text-xs text-gray-500">{b.author}</div>
+                  <div className="text-xs text-gray-500">
+                    {b.book_code ?? "no code"} · {b.author ?? "no author"}
+                  </div>
                 </td>
                 <td className="p-2">{b.genre}</td>
                 <td className="p-2">{b.status}</td>
@@ -98,7 +121,7 @@ async function AdminContent({ searchParams }: { searchParams: SearchParams }) {
                 <td className="p-2">{b.status === "borrowed" ? fmt(b.due_date) : "—"}</td>
                 <td className="p-2">
                   <div className="flex flex-wrap items-center gap-3">
-                                        {b.status === "available" && (
+                    {b.status === "available" && (
                       <Link href={`/admin/books/${b.id}/issue`} className="text-green-700 underline">
                         Issue
                       </Link>
@@ -123,6 +146,8 @@ async function AdminContent({ searchParams }: { searchParams: SearchParams }) {
           </tbody>
         </table>
       </div>
+
+      <Pager basePath="/admin" params={{ q }} page={result.page} pages={result.pages} />
     </>
   );
 }
