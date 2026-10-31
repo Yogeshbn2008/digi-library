@@ -9,20 +9,18 @@ import { requireAdmin } from "@/lib/auth";
 function readBook(formData: FormData) {
   return {
     title: String(formData.get("title") ?? "").trim(),
-    author: String(formData.get("author") ?? "").trim(),
+    author: String(formData.get("author") ?? "").trim() || null,
     genre: String(formData.get("genre") ?? "").trim(),
     isbn: String(formData.get("isbn") ?? "").trim() || null,
   };
 }
 
 function validate(b: ReturnType<typeof readBook>): string | null {
-  if (!b.title || !b.author || !b.genre) {
-    return "Title, author and genre are required.";
-  }
-  if (b.title.length > 255 || b.author.length > 255) {
+  if (!b.title || !b.genre) return "Title and category are required.";
+  if (b.title.length > 255 || (b.author && b.author.length > 255)) {
     return "Title and author must be 255 characters or fewer.";
   }
-  if (b.genre.length > 100) return "Genre must be 100 characters or fewer.";
+  if (b.genre.length > 100) return "Category must be 100 characters or fewer.";
   if (b.isbn && b.isbn.length > 20) return "ISBN must be 20 characters or fewer.";
   return null;
 }

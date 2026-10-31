@@ -73,7 +73,7 @@ async function AdminContent({ searchParams }: { searchParams: SearchParams }) {
       <h2 className="mb-2 text-lg font-semibold">Add a book</h2>
       <form action={addBook} className="mb-8 grid gap-2 sm:grid-cols-2">
         <input name="title" placeholder="Title" required maxLength={255} className="rounded border p-2" />
-        <input name="author" placeholder="Author" required maxLength={255} className="rounded border p-2" />
+        <input name="author" placeholder="Author (optional)" maxLength={255} className="rounded border p-2" />
         <input name="genre" placeholder="Category" required maxLength={100} className="rounded border p-2" />
         <input name="isbn" placeholder="ISBN (optional)" maxLength={20} className="rounded border p-2" />
         <button className="rounded bg-black p-2 text-white sm:col-span-2">Add book</button>

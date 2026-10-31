@@ -37,7 +37,7 @@ async function EditForm({ params, searchParams }: Props) {
       <form action={updateBook} className="space-y-2">
         <input type="hidden" name="id" value={book.id} />
         <input name="title" defaultValue={book.title} required maxLength={255} className="w-full rounded border p-2" />
-        <input name="author" defaultValue={book.author} required maxLength={255} className="w-full rounded border p-2" />
+        <input name="author" defaultValue={book.author ?? ""} maxLength={255} className="w-full rounded border p-2" />
         <input name="genre" defaultValue={book.genre} required maxLength={100} className="w-full rounded border p-2" />
         <input name="isbn" defaultValue={book.isbn ?? ""} placeholder="ISBN (optional)" maxLength={20} className="w-full rounded border p-2" />
         <div className="flex gap-3">
