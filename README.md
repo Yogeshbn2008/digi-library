@@ -5,11 +5,16 @@ A hostel library management website. Hostel mates can search the whole book coll
 **Live site:** [https://digi-library-one.vercel.app/](https://digi-library-one.vercel.app/)
 
 
-Add screenshots after taking them (save them in docs/screenshots/), then remove this comment markers:
+## Screenshots
 
-![Public catalog](docs\screenshots\catalog.png)
-![Admin dashboard](docs\screenshots\admin-dashboard.png)
-![Issue a book](docs\screenshots\issue-book.png)
+### Public catalog
+![Public catalog](docs/screenshots/catalog.png)
+
+### Admin dashboard
+![Admin dashboard](docs/screenshots/admin-dashboard.png)
+
+### Issue a book
+![Issue a book](docs/screenshots/issue-book.png)
 
 
 ## Why this project exists
