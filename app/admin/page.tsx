@@ -5,6 +5,7 @@ import { searchAdminBooks, getOverdue } from "@/lib/loans";
 import { logout } from "./actions";
 import { addBook, deleteBook } from "./book-actions";
 import { returnBook } from "./loan-actions";
+import { getGenres } from "@/lib/books";
 import DeleteButton from "@/components/DeleteButton";
 import Pager from "@/components/Pager";
 
@@ -32,9 +33,10 @@ export default function AdminHome({ searchParams }: { searchParams: SearchParams
 async function AdminContent({ searchParams }: { searchParams: SearchParams }) {
   const admin = await requireAdmin();
   const { msg, error, q, page } = await searchParams;
-  const [result, overdue] = await Promise.all([
+    const [result, overdue, genres] = await Promise.all([
     searchAdminBooks({ q, page: Number(page) || 1 }),
     getOverdue(),
+    getGenres(),
   ]);
   const books = result.books;
 
@@ -71,10 +73,16 @@ async function AdminContent({ searchParams }: { searchParams: SearchParams }) {
       </Link>
 
       <h2 className="mb-2 text-lg font-semibold">Add a book</h2>
-      <form action={addBook} className="mb-8 grid gap-2 sm:grid-cols-2">
+            <form action={addBook} className="mb-8 grid gap-2 sm:grid-cols-2">
+        <input name="book_code" placeholder="Book code (e.g. MBBS-120)" required maxLength={30} className="rounded border p-2" />
         <input name="title" placeholder="Title" required maxLength={255} className="rounded border p-2" />
         <input name="author" placeholder="Author (optional)" maxLength={255} className="rounded border p-2" />
-        <input name="genre" placeholder="Category" required maxLength={100} className="rounded border p-2" />
+        <input name="genre" list="categories" placeholder="Category" required maxLength={100} className="rounded border p-2" />
+        <datalist id="categories">
+          {genres.map((g) => (
+            <option key={g} value={g} />
+          ))}
+        </datalist>
         <input name="isbn" placeholder="ISBN (optional)" maxLength={20} className="rounded border p-2" />
         <button className="rounded bg-black p-2 text-white sm:col-span-2">Add book</button>
       </form>
