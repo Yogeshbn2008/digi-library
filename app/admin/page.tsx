@@ -68,9 +68,17 @@ async function AdminContent({ searchParams }: { searchParams: SearchParams }) {
         </section>
       )}
 
-      <Link href="/admin/import" className="mb-6 inline-block text-blue-600 underline">
-        Import books from CSV
-      </Link>
+            <div className="mb-6 flex flex-wrap gap-4">
+        <Link href="/admin/import" className="text-blue-600 underline">
+          Import books from CSV
+        </Link>
+        <a href="/admin/export/books" className="text-blue-600 underline">
+          Download books (CSV)
+        </a>
+        <a href="/admin/export/loans" className="text-blue-600 underline">
+          Download loan history (CSV)
+        </a>
+      </div>
 
       <h2 className="mb-2 text-lg font-semibold">Add a book</h2>
             <form action={addBook} className="mb-8 grid gap-2 sm:grid-cols-2">

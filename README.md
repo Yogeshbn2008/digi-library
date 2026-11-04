@@ -168,8 +168,8 @@ book_code,title,author,category,price,donated,status,remarks
 - [x] Issue and return with transactions, overdue list
 - [x] CSV import for the full register
 - [x] Deployment
-- [ ] Change a book's status and edit book codes in the admin forms
-- [ ] Better layout on small phone screens
+- [x] Change a book's status and edit book codes in the admin forms
+- [x] Better layout on small phone screens
 - [ ] CSV export for backups
 - [ ] Loan history page and reports
 - [ ] Change password and add/remove admins from the dashboard
