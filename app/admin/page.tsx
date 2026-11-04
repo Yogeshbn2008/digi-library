@@ -72,6 +72,9 @@ async function AdminContent({ searchParams }: { searchParams: SearchParams }) {
         <Link href="/admin/import" className="text-blue-600 underline">
           Import books from CSV
         </Link>
+        <Link href="/admin/admins" className="text-blue-600 underline">
+          Manage admins
+        </Link>
         <a href="/admin/export/books" className="text-blue-600 underline">
           Download books (CSV)
         </a>
