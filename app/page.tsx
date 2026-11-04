@@ -32,7 +32,7 @@ async function Catalog({ searchParams }: { searchParams: SearchParams }) {
 
   return (
     <>
-      <form className="mb-4 flex gap-2">
+            <form className="mb-4 flex flex-col gap-2 sm:flex-row">
         <input
           name="q"
           defaultValue={q}

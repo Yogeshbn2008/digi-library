@@ -88,7 +88,7 @@ async function AdminContent({ searchParams }: { searchParams: SearchParams }) {
       </form>
 
       <h2 className="mb-2 text-lg font-semibold">All books ({result.total})</h2>
-      <form className="mb-3 flex gap-2">
+            <form className="mb-3 flex flex-col gap-2 sm:flex-row">
         <input
           name="q"
           defaultValue={q}
@@ -99,7 +99,7 @@ async function AdminContent({ searchParams }: { searchParams: SearchParams }) {
       </form>
 
       <div className="overflow-x-auto">
-        <table className="w-full text-left text-sm">
+                <table className="w-full min-w-[720px] text-left text-sm">
           <thead>
             <tr className="border-b">
               <th className="p-2">Title</th>
