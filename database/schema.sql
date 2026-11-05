@@ -36,3 +36,6 @@ CREATE TABLE IF NOT EXISTS digilibrary.admins (
   is_active BOOLEAN NOT NULL DEFAULT TRUE,
   active_session_id VARCHAR(64) NULL
 );
+
+CREATE INDEX idx_loans_book_open ON digilibrary.loans (book_id, return_date);
+CREATE INDEX idx_loans_issue_date ON digilibrary.loans (issue_date);

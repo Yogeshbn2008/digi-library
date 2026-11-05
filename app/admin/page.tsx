@@ -75,6 +75,12 @@ async function AdminContent({ searchParams }: { searchParams: SearchParams }) {
         <Link href="/admin/admins" className="text-blue-600 underline">
           Manage admins
         </Link>
+         <Link href="/admin/loans" className="text-blue-600 underline">
+          Loan history
+        </Link>
+        <Link href="/admin/reports" className="text-blue-600 underline">
+          Reports
+        </Link>
         <a href="/admin/export/books" className="text-blue-600 underline">
           Download books (CSV)
         </a>
