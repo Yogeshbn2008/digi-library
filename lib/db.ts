@@ -2,6 +2,16 @@ import mysql from "mysql2/promise";
 
 const globalForDb = global as typeof globalThis & { pool?: mysql.Pool };
 
+function sslOptions() {
+  if (process.env.DB_SSL !== "true") return undefined;
+
+  // The certificate text may arrive with literal \n sequences from some hosts
+  const ca = process.env.DB_CA?.replace(/\\n/g, "\n");
+
+  if (ca) return { ca, rejectUnauthorized: true }; // encrypted AND verified
+  return { rejectUnauthorized: false }; // encrypted only (fallback)
+}
+
 export const pool =
   globalForDb.pool ??
   mysql.createPool({
@@ -13,8 +23,7 @@ export const pool =
     charset: "utf8mb4",
     waitForConnections: true,
     connectionLimit: 3,
-    ssl:
-      process.env.DB_SSL === "true" ? { rejectUnauthorized: false } : undefined,
+    ssl: sslOptions(),
   });
 
 globalForDb.pool = pool;
