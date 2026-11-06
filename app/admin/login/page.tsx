@@ -25,9 +25,11 @@ async function LoginForm({
 
   return (
     <>
-      {error && (
+        {error && (
         <p className="mb-3 rounded bg-red-100 p-2 text-sm text-red-700">
-          Invalid username or password.
+          {error === "locked"
+            ? "Too many failed attempts. Please wait 15 minutes and try again."
+            : "Invalid username or password."}
         </p>
       )}
       <form action={login} className="space-y-3">

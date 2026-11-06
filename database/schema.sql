@@ -39,3 +39,13 @@ CREATE TABLE IF NOT EXISTS digilibrary.admins (
 
 CREATE INDEX idx_loans_book_open ON digilibrary.loans (book_id, return_date);
 CREATE INDEX idx_loans_issue_date ON digilibrary.loans (issue_date);
+
+CREATE TABLE IF NOT EXISTS login_attempts (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  username VARCHAR(50) NOT NULL,
+  ip VARCHAR(45) NOT NULL,
+  success TINYINT(1) NOT NULL,
+  attempted_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_attempts_user_time (username, attempted_at),
+  INDEX idx_attempts_ip_time (ip, attempted_at)
+);
