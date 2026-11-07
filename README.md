@@ -85,6 +85,9 @@ Book statuses: `available`, `borrowed`, `lost`, `unverified`. A loan with `retur
 - Authorization is checked on the server in every action, not just by hiding buttons
 - The same error message is shown for a wrong username and a wrong password
 - Secrets live in environment variables and are never committed
+- Login rate limiting: 5 failed attempts per username (or 30 per IP) in 15 minutes locks logins for that window
+- The database connection is verified against the provider's CA certificate
+- An audit log records who logged in, changed books, issued or returned, imported, exported or changed admins
 
 ## Project structure
 

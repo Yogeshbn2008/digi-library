@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { RowDataPacket } from "mysql2";
 import { pool } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
+import { logAction } from "@/lib/audit";
 
 const to = (key: "msg" | "error", text: string) =>
   `/admin/admins?${key}=${encodeURIComponent(text)}`;
@@ -26,7 +27,7 @@ function hasCode(err: unknown, code: string) {
 }
 
 export async function addAdmin(formData: FormData) {
-  await requireAdmin();
+ const me = await requireAdmin();
 
   const name = String(formData.get("name") ?? "").trim();
   const username = String(formData.get("username") ?? "").trim().toLowerCase();
@@ -56,7 +57,7 @@ export async function addAdmin(formData: FormData) {
     }
     throw err;
   }
-
+  await logAction(me, "admin.add", username);
   revalidatePath("/admin/admins");
   redirect(to("msg", `Admin "${username}" added.`));
 }
@@ -82,7 +83,7 @@ export async function changeOwnPassword(formData: FormData) {
 
   const hash = await bcrypt.hash(next, 10);
   await pool.query("UPDATE admins SET password_hash = ? WHERE id = ?", [hash, me.id]);
-
+  await logAction(me, "password.change");
   redirect(to("msg", "Password changed."));
 }
 
@@ -105,7 +106,7 @@ export async function setAdminActive(formData: FormData) {
      WHERE id = ?`,
     [active, active, id]
   );
-
+  await logAction(me, active ? "admin.reactivate" : "admin.deactivate", `admin id ${id}`);
   revalidatePath("/admin/admins");
   redirect(to("msg", active ? "Admin reactivated." : "Admin deactivated."));
 }

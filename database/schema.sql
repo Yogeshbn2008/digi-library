@@ -49,3 +49,16 @@ CREATE TABLE IF NOT EXISTS login_attempts (
   INDEX idx_attempts_user_time (username, attempted_at),
   INDEX idx_attempts_ip_time (ip, attempted_at)
 );
+
+
+CREATE TABLE IF NOT EXISTS audit_log (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  admin_id INT NULL,
+  admin_username VARCHAR(50) NOT NULL,
+  action VARCHAR(40) NOT NULL,
+  target VARCHAR(120) NULL,
+  details VARCHAR(255) NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_audit_created (created_at),
+  INDEX idx_audit_admin (admin_username, created_at)
+);

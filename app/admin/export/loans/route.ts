@@ -4,12 +4,14 @@ import { pool } from "@/lib/db";
 import { getCurrentAdmin } from "@/lib/auth";
 import { toCsv } from "@/lib/csv";
 import { todayIST } from "@/lib/dates";
+import { logAction } from "@/lib/audit";
 
 export async function GET(req: Request) {
   const admin = await getCurrentAdmin();
   if (!admin) {
     return NextResponse.redirect(new URL("/admin/login", req.url));
   }
+    await logAction(admin, "export.books");   // use "export.loans" in the loans file
 
   const [rows] = await pool.query<RowDataPacket[]>(
     `SELECT l.id, b.book_code, b.title, l.borrower_name, l.registration_no,

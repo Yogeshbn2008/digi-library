@@ -6,6 +6,7 @@ import { ResultSetHeader } from "mysql2";
 import { pool } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 import { todayIST, addDays } from "@/lib/dates";
+import { logAction, bookLabel } from "@/lib/audit";
 
 const to = (path: string, key: "msg" | "error", text: string) =>
   `${path}?${key}=${encodeURIComponent(text)}`;
@@ -58,14 +59,14 @@ export async function issueBook(formData: FormData) {
   }
 
   if (problem) redirect(to("/admin", "error", problem));
-
+  await logAction(admin, "loan.issue", await bookLabel(bookId), `${name} (${regNo}), due ${due}`);
   revalidatePath("/");
   revalidatePath("/admin");
   redirect(to("/admin", "msg", "Book issued."));
 }
 
 export async function returnBook(formData: FormData) {
-  await requireAdmin();
+    const admin = await requireAdmin();
 
   const bookId = Number(formData.get("bookId"));
   if (!Number.isInteger(bookId) || bookId <= 0) redirect("/admin");
@@ -98,7 +99,7 @@ export async function returnBook(formData: FormData) {
   }
 
   if (problem) redirect(to("/admin", "error", problem));
-
+  await logAction(admin, "loan.return", await bookLabel(bookId));
   revalidatePath("/");
   revalidatePath("/admin");
   redirect(to("/admin", "msg", "Book returned."));

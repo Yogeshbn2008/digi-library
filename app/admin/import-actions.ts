@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { RowDataPacket } from "mysql2";
 import { pool } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
+import { logAction } from "@/lib/audit";
 
 const REQUIRED = ["book_code", "title", "category"];
 const STATUSES = ["available", "lost", "unverified"];
@@ -16,7 +17,7 @@ const to = (key: "msg" | "error", text: string) =>
   `/admin/import?${key}=${encodeURIComponent(text)}`;
 
 export async function importBooks(formData: FormData) {
-  await requireAdmin();
+   const admin = await requireAdmin();
 
   const file = formData.get("file");
   if (!(file instanceof File) || file.size === 0) {
@@ -120,6 +121,12 @@ export async function importBooks(formData: FormData) {
   } finally {
     conn.release();
   }
+    await logAction(
+    admin,
+    "books.import",
+    file.name,
+    `${fresh.length} added, ${rows.length - fresh.length} skipped`
+  );
 
   revalidatePath("/");
   revalidatePath("/admin");

@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { RowDataPacket } from "mysql2";
 import { pool } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
+import { logAction } from "@/lib/audit";
 
 const EDITABLE_STATUSES = ["available", "lost", "unverified"];
 
@@ -47,7 +48,7 @@ const to = (path: string, key: "msg" | "error", text: string) =>
   `${path}?${key}=${encodeURIComponent(text)}`;
 
 export async function addBook(formData: FormData) {
-  await requireAdmin();
+  const admin = await requireAdmin();
   const book = readBook(formData);
 
   const problem = validate(book);
@@ -66,13 +67,14 @@ export async function addBook(formData: FormData) {
     throw err;
   }
 
+  await logAction(admin, "book.add", book.bookCode, book.title);
   revalidatePath("/");
   revalidatePath("/admin");
   redirect(to("/admin", "msg", "Book added."));
 }
 
 export async function updateBook(formData: FormData) {
-  await requireAdmin();
+  const admin = await requireAdmin();
   const id = Number(formData.get("id"));
   const editPath = `/admin/books/${id}/edit`;
   if (!Number.isInteger(id) || id <= 0) redirect("/admin");
@@ -104,21 +106,28 @@ export async function updateBook(formData: FormData) {
     throw err;
   }
 
+  await logAction(
+    admin,
+    "book.update",
+    book.bookCode,
+    status ? `${book.title} (status: ${status})` : book.title
+  );
   revalidatePath("/");
   revalidatePath("/admin");
   redirect(to("/admin", "msg", "Book updated."));
 }
 
 export async function deleteBook(formData: FormData) {
-  await requireAdmin();
+  const admin = await requireAdmin();
   const id = Number(formData.get("id"));
   if (!Number.isInteger(id) || id <= 0) redirect("/admin");
 
   const [rows] = await pool.query<RowDataPacket[]>(
-    "SELECT status FROM books WHERE id = ?",
+    "SELECT status, book_code, title FROM books WHERE id = ?",
     [id]
   );
-  if (rows[0]?.status === "borrowed") {
+  const existing = rows[0];
+  if (existing?.status === "borrowed") {
     redirect(to("/admin", "error", "This book is currently borrowed. Return it before deleting."));
   }
 
@@ -131,6 +140,7 @@ export async function deleteBook(formData: FormData) {
     throw err;
   }
 
+  await logAction(admin, "book.delete", existing?.book_code ?? `#${id}`, existing?.title ?? null);
   revalidatePath("/");
   revalidatePath("/admin");
   redirect(to("/admin", "msg", "Book deleted."));

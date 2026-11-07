@@ -4,6 +4,7 @@ import { pool } from "@/lib/db";
 import { getCurrentAdmin } from "@/lib/auth";
 import { toCsv } from "@/lib/csv";
 import { todayIST } from "@/lib/dates";
+import { logAction } from "@/lib/audit";
 
 export async function GET(req: Request) {
   // Route handlers are public URLs, so they must check the admin themselves
@@ -11,6 +12,7 @@ export async function GET(req: Request) {
   if (!admin) {
     return NextResponse.redirect(new URL("/admin/login", req.url));
   }
+    await logAction(admin, "export.books");   // use "export.loans" in the loans file
 
   const [rows] = await pool.query<RowDataPacket[]>(
     `SELECT b.book_code, b.title, b.author, b.genre, b.price, b.donated,

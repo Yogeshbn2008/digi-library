@@ -78,6 +78,9 @@ async function AdminContent({ searchParams }: { searchParams: SearchParams }) {
          <Link href="/admin/loans" className="text-blue-600 underline">
           Loan history
         </Link>
+        <Link href="/admin/audit" className="text-blue-600 underline">
+          Audit log
+        </Link>
         <Link href="/admin/reports" className="text-blue-600 underline">
           Reports
         </Link>

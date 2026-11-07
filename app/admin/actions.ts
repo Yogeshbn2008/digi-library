@@ -5,8 +5,9 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { RowDataPacket } from "mysql2";
 import { pool } from "@/lib/db";
-import { createSession, destroySession } from "@/lib/auth";
+import { createSession, destroySession, getCurrentAdmin } from "@/lib/auth";
 import { isBlocked, recordAttempt, clearFailures } from "@/lib/rate-limit";
+import { logAction } from "@/lib/audit";
 
 // Used when the username does not exist, so a wrong username takes the
 // same time as a wrong password and does not reveal which usernames exist
@@ -28,6 +29,7 @@ export async function login(formData: FormData) {
   const ip = await clientIp();
 
   if (await isBlocked(username, ip)) {
+    await logAction(null, "login.blocked", username, ip);
     redirect("/admin/login?error=locked");
   }
 
@@ -42,16 +44,20 @@ export async function login(formData: FormData) {
 
   if (!admin || !ok) {
     await recordAttempt(username, ip, false);
+    await logAction(null, "login.failed", username, ip);
     redirect("/admin/login?error=1");
   }
 
   await recordAttempt(username, ip, true);
   await clearFailures(username);
   await createSession(admin.id);
+  await logAction({ id: admin.id, username }, "login", null, ip);
   redirect("/admin");
 }
 
 export async function logout() {
+  const me = await getCurrentAdmin();
+  if (me) await logAction(me, "logout");
   await destroySession();
   redirect("/admin/login");
 }
