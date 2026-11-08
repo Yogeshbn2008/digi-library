@@ -62,3 +62,30 @@ CREATE TABLE IF NOT EXISTS audit_log (
   INDEX idx_audit_created (created_at),
   INDEX idx_audit_admin (admin_username, created_at)
 );
+
+CREATE TABLE IF NOT EXISTS students (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  registration_no VARCHAR(30) NOT NULL,
+  name VARCHAR(100) NOT NULL,
+  password_hash VARCHAR(255) NOT NULL,
+  status ENUM('pending','approved','rejected','blocked') NOT NULL DEFAULT 'pending',
+  created_ip VARCHAR(45) NOT NULL DEFAULT 'unknown',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  decided_at DATETIME NULL,
+  decided_by VARCHAR(50) NULL,
+  last_login_at DATETIME NULL,
+  UNIQUE KEY uniq_student_reg (registration_no),
+  INDEX idx_students_status (status, created_at),
+  INDEX idx_students_ip_time (created_ip, created_at)
+);
+
+CREATE TABLE IF NOT EXISTS student_sessions (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  student_id INT NOT NULL,
+  token_hash CHAR(64) NOT NULL,
+  expires_at DATETIME NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uniq_session_token (token_hash),
+  INDEX idx_sessions_student (student_id),
+  FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
+);

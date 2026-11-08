@@ -1,6 +1,9 @@
 import { Suspense } from "react";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { searchBooks, getGenres } from "@/lib/books";
+import { canViewCatalog, getCurrentStudent } from "@/lib/student-auth";
+import { logoutStudent } from "./student-actions";
 import Pager from "@/components/Pager";
 
 type SearchParams = Promise<{ q?: string; genre?: string; page?: string }>;
@@ -8,7 +11,12 @@ type SearchParams = Promise<{ q?: string; genre?: string; page?: string }>;
 export default function Home({ searchParams }: { searchParams: SearchParams }) {
   return (
     <main className="mx-auto max-w-4xl p-6">
-      <h1 className="mb-4 text-2xl font-bold">Hostel Library</h1>
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <h1 className="text-2xl font-bold">Hostel Library</h1>
+        <Suspense fallback={null}>
+          <StudentNav />
+        </Suspense>
+      </div>
       <Suspense fallback={<p className="text-gray-500">Loading books...</p>}>
         <Catalog searchParams={searchParams} />
       </Suspense>
@@ -22,7 +30,30 @@ export default function Home({ searchParams }: { searchParams: SearchParams }) {
   );
 }
 
+async function StudentNav() {
+  const student = await getCurrentStudent();
+
+  if (!student) {
+    return (
+      <div className="flex gap-3 text-sm">
+        <Link href="/login" className="underline">Student login</Link>
+        <Link href="/register" className="underline">Request access</Link>
+      </div>
+    );
+  }
+  return (
+    <div className="flex items-center gap-3 text-sm">
+      <Link href="/my-books" className="underline">My books</Link>
+      <form action={logoutStudent}>
+        <button className="underline">Log out</button>
+      </form>
+    </div>
+  );
+}
+
 async function Catalog({ searchParams }: { searchParams: SearchParams }) {
+  if (!(await canViewCatalog())) redirect("/login");
+
   const { q, genre, page } = await searchParams;
   const [result, genres] = await Promise.all([
     searchBooks({ q, genre, page: Number(page) || 1 }),
@@ -32,7 +63,7 @@ async function Catalog({ searchParams }: { searchParams: SearchParams }) {
 
   return (
     <>
-            <form className="mb-4 flex flex-col gap-2 sm:flex-row">
+      <form className="mb-4 flex flex-col gap-2 sm:flex-row">
         <input
           name="q"
           defaultValue={q}

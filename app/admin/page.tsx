@@ -8,6 +8,7 @@ import { returnBook } from "./loan-actions";
 import { getGenres } from "@/lib/books";
 import DeleteButton from "@/components/DeleteButton";
 import Pager from "@/components/Pager";
+import { countPendingStudents } from "@/lib/students";
 
 type SearchParams = Promise<{
   msg?: string;
@@ -33,10 +34,11 @@ export default function AdminHome({ searchParams }: { searchParams: SearchParams
 async function AdminContent({ searchParams }: { searchParams: SearchParams }) {
   const admin = await requireAdmin();
   const { msg, error, q, page } = await searchParams;
-    const [result, overdue, genres] = await Promise.all([
+      const [result, overdue, genres, pendingStudents] = await Promise.all([
     searchAdminBooks({ q, page: Number(page) || 1 }),
     getOverdue(),
     getGenres(),
+    countPendingStudents(),
   ]);
   const books = result.books;
 
@@ -83,6 +85,9 @@ async function AdminContent({ searchParams }: { searchParams: SearchParams }) {
         </Link>
         <Link href="/admin/reports" className="text-blue-600 underline">
           Reports
+        </Link>
+         <Link href="/admin/students" className="text-blue-600 underline">
+          Student requests{pendingStudents > 0 ? ` (${pendingStudents} waiting)` : ""}
         </Link>
         <a href="/admin/export/books" className="text-blue-600 underline">
           Download books (CSV)

@@ -5,7 +5,11 @@ const WINDOW_MINUTES = 15;
 const MAX_FAILS_PER_USERNAME = 5;
 const MAX_FAILS_PER_IP = 30;
 
-export async function isBlocked(username: string, ip: string) {
+export async function isBlocked(
+  username: string,
+  ip: string,
+  maxPerIp = MAX_FAILS_PER_IP
+) {
   const [rows] = await pool.query<
     (RowDataPacket & { by_user: string | null; by_ip: string | null })[]
   >(
@@ -17,7 +21,7 @@ export async function isBlocked(username: string, ip: string) {
   );
   const byUser = Number(rows[0].by_user ?? 0);
   const byIp = Number(rows[0].by_ip ?? 0);
-  return byUser >= MAX_FAILS_PER_USERNAME || byIp >= MAX_FAILS_PER_IP;
+   return byUser >= MAX_FAILS_PER_USERNAME || byIp >= maxPerIp;
 }
 
 export async function recordAttempt(username: string, ip: string, success: boolean) {
