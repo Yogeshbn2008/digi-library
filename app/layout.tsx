@@ -13,8 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-   title: "Digi Library",
-   description: "Digi Library - Explore, Search and Manage Books Online.",
+  title: "Digi Library",
+  description: "Search the hostel library and see which books are available.",
+  robots: { index: false, follow: false },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

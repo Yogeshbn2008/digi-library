@@ -21,11 +21,15 @@ export default function RegisterPage({ searchParams }: { searchParams: SearchPar
 async function RegisterForm({ searchParams }: { searchParams: SearchParams }) {
   const { error } = await searchParams;
   const box = "w-full rounded border p-2";
+    const needsCode = Boolean(process.env.JOIN_CODE);
 
   return (
     <>
       {error && <p className="mb-3 rounded bg-red-100 p-2 text-sm text-red-700">{error}</p>}
       <form action={registerStudent} className="space-y-2">
+        {needsCode && (
+          <input name="join_code" placeholder="Hostel code (ask the committee)" required maxLength={64} autoComplete="off" className={box} />
+        )}
         <input name="registration_no" placeholder="Registration number" required maxLength={30} autoComplete="username" className={box} />
         <input name="name" placeholder="Full name" required maxLength={100} autoComplete="name" className={box} />
         <input name="password" type="password" placeholder="Password (8 or more characters)" required minLength={8} maxLength={72} autoComplete="new-password" className={box} />

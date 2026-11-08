@@ -74,8 +74,9 @@ export async function destroyStudentSession() {
 
 // Public by default. When REQUIRE_STUDENT_LOGIN=true, only approved
 // students and admins may view the catalog.
+// Secure by default: the catalog needs a login unless PUBLIC_CATALOG=true
 export async function canViewCatalog() {
-  if (process.env.REQUIRE_STUDENT_LOGIN !== "true") return true;
+  if (process.env.PUBLIC_CATALOG === "true") return true;
   if (await getCurrentStudent()) return true;
   return Boolean(await getCurrentAdmin());
 }

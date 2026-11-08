@@ -7,10 +7,17 @@ import { pool } from "@/lib/db";
 import { clientIp } from "@/lib/client-ip";
 import { isBlocked, recordAttempt, clearFailures } from "@/lib/rate-limit";
 import { createStudentSession, destroyStudentSession } from "@/lib/student-auth";
+import { createHash, timingSafeEqual } from "node:crypto";
 
 const REG_PATTERN = /^[A-Za-z0-9._/-]{2,30}$/;
 const REQUESTS_PER_IP_PER_HOUR = 30;
 const DUMMY_HASH = bcrypt.hashSync("not-a-real-password", 10);
+
+function codeMatches(given: string, expected: string) {
+  const a = createHash("sha256").update(given.trim().toLowerCase()).digest();
+  const b = createHash("sha256").update(expected.trim().toLowerCase()).digest();
+  return timingSafeEqual(a, b);
+}
 
 const toRegister = (text: string) => `/register?error=${encodeURIComponent(text)}`;
 
@@ -27,7 +34,13 @@ export async function registerStudent(formData: FormData) {
   const name = String(formData.get("name") ?? "").trim();
   const password = String(formData.get("password") ?? "");
   const confirm = String(formData.get("confirm") ?? "");
-
+  const expectedCode = process.env.JOIN_CODE;
+  if (expectedCode) {
+    const given = String(formData.get("join_code") ?? "");
+    if (!codeMatches(given, expectedCode)) {
+      redirect(toRegister("The hostel code is not correct. Ask the committee for it."));
+    }
+  }
   if (!REG_PATTERN.test(reg)) {
     redirect(toRegister("Enter your registration number (letters, numbers, . - / only)."));
   }
