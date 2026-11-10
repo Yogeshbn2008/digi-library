@@ -9,8 +9,16 @@ const fmt = (d: Date | null) =>
 
 export default function MyBooksPage() {
   return (
-    <main className="mx-auto max-w-3xl p-6">
-      <Suspense fallback={<p className="text-gray-500">Loading...</p>}>
+    <main className="mx-auto max-w-4xl px-6 py-8">
+      <Suspense
+        fallback={
+          <div className="space-y-4 animate-pulse-subtle">
+            <div className="h-8 w-48 bg-muted-bg rounded" />
+            <div className="h-4 w-32 bg-muted-bg rounded" />
+            <div className="card p-6 mt-6"><div className="h-20 bg-muted-bg rounded" /></div>
+          </div>
+        }
+      >
         <MyBooksContent />
       </Suspense>
     </main>
@@ -25,54 +33,111 @@ async function MyBooksContent() {
   const past = loans.filter((l) => l.return_date);
 
   return (
-    <>
-      <div className="mb-6 flex items-center justify-between gap-3">
+    <div className="animate-fade-in">
+      {/* Header */}
+      <div className="mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">My books</h1>
-          <p className="text-sm text-gray-600">
-            {student.name} ({student.registration_no})
+          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
+            <span>📖</span> My books
+          </h1>
+          <p className="text-sm text-muted mt-1">
+            {student.name} · {student.registration_no}
           </p>
         </div>
         <form action={logoutStudent}>
-          <button className="rounded bg-black px-4 py-2 text-white">Log out</button>
+          <button className="btn-secondary text-danger hover:text-danger">
+            Log out
+          </button>
         </form>
       </div>
 
-      <h2 className="mb-2 text-lg font-semibold">Borrowed now</h2>
-      {current.length === 0 ? (
-        <p className="mb-6 text-sm text-gray-500">You have no books at the moment.</p>
-      ) : (
-        <ul className="mb-6 space-y-2">
-          {current.map((l) => {
-            const overdue = dateToIso(new Date(l.due_date)) < today;
-            return (
-              <li key={l.id} className="rounded border p-3">
-                <div className="font-semibold">{l.title}</div>
-                <div className="text-xs text-gray-500">{l.book_code ?? "no code"}</div>
-                <div className="mt-1 text-sm">
-                  Due {fmt(l.due_date)}{" "}
-                  {overdue && <span className="font-semibold text-red-600">(overdue)</span>}
+      {/* Current loans */}
+      <section className="mb-10">
+        <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+          <span>📗</span> Borrowed now
+          {current.length > 0 && (
+            <span className="badge badge-primary">{current.length}</span>
+          )}
+        </h2>
+        {current.length === 0 ? (
+          <div className="card p-8 text-center">
+            <p className="text-3xl mb-2">🎉</p>
+            <p className="text-muted font-medium">No books borrowed</p>
+            <p className="text-muted text-sm mt-1">
+              Visit the library to borrow a book
+            </p>
+          </div>
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-2 stagger">
+            {current.map((l) => {
+              const overdue = dateToIso(new Date(l.due_date)) < today;
+              return (
+                <div
+                  key={l.id}
+                  className={`card p-4 animate-fade-in ${
+                    overdue ? "border-danger/40 bg-danger-bg/30" : ""
+                  }`}
+                >
+                  <h3 className="font-semibold">{l.title}</h3>
+                  <p className="text-xs text-muted mt-0.5">
+                    {l.book_code ?? "No code"}
+                  </p>
+                  <div className="mt-3 flex items-center justify-between">
+                    <span className="text-sm text-muted">Due {fmt(l.due_date)}</span>
+                    {overdue ? (
+                      <span className="badge badge-danger">⚠ Overdue</span>
+                    ) : (
+                      <span className="badge badge-success">On time</span>
+                    )}
+                  </div>
                 </div>
-              </li>
-            );
-          })}
-        </ul>
-      )}
+              );
+            })}
+          </div>
+        )}
+      </section>
 
-      <h2 className="mb-2 text-lg font-semibold">History</h2>
-      {past.length === 0 ? (
-        <p className="mb-6 text-sm text-gray-500">No returned books yet.</p>
-      ) : (
-        <ul className="mb-6 space-y-1 text-sm">
-          {past.map((l) => (
-            <li key={l.id}>
-              {l.title} <span className="text-gray-500">- borrowed {fmt(l.issue_date)}, returned {fmt(l.return_date)}</span>
-            </li>
-          ))}
-        </ul>
-      )}
+      {/* History */}
+      <section className="mb-8">
+        <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+          <span>📜</span> History
+        </h2>
+        {past.length === 0 ? (
+          <div className="card p-8 text-center">
+            <p className="text-muted text-sm">No returned books yet.</p>
+          </div>
+        ) : (
+          <div className="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Book</th>
+                  <th>Borrowed</th>
+                  <th>Returned</th>
+                </tr>
+              </thead>
+              <tbody>
+                {past.map((l) => (
+                  <tr key={l.id}>
+                    <td className="font-medium">{l.title}</td>
+                    <td className="text-muted">{fmt(l.issue_date)}</td>
+                    <td>
+                      <span className="badge badge-success">{fmt(l.return_date)}</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
 
-      <Link href="/" className="underline">Back to the library</Link>
-    </>
+      <Link
+        href="/"
+        className="text-sm text-muted hover:text-primary transition-colors"
+      >
+        ← Back to the library
+      </Link>
+    </div>
   );
 }

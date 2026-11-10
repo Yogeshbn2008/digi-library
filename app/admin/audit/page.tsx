@@ -8,9 +8,11 @@ type SearchParams = Promise<{ q?: string; page?: string }>;
 
 export default function AuditPage({ searchParams }: { searchParams: SearchParams }) {
   return (
-    <main className="mx-auto max-w-5xl p-6">
-      <h1 className="mb-4 text-2xl font-bold">Audit log</h1>
-      <Suspense fallback={<p className="text-gray-500">Loading...</p>}>
+    <main className="mx-auto max-w-6xl px-6 py-8">
+      <h1 className="text-2xl font-bold tracking-tight mb-6 flex items-center gap-2">
+        🔍 Audit log
+      </h1>
+      <Suspense fallback={<div className="card p-12 text-center animate-pulse-subtle"><div className="h-6 w-32 bg-muted-bg rounded mx-auto" /></div>}>
         <AuditContent searchParams={searchParams} />
       </Suspense>
     </main>
@@ -23,46 +25,51 @@ async function AuditContent({ searchParams }: { searchParams: SearchParams }) {
   const result = await searchAudit({ q, page: Number(page) || 1 });
 
   return (
-    <>
-      <form className="mb-3 flex flex-col gap-2 sm:flex-row">
-        <input
-          name="q"
-          defaultValue={q}
-          placeholder="Search admin, action, book code or details"
-          className="flex-1 rounded border p-2"
-        />
-        <button className="rounded bg-black px-4 text-white">Search</button>
+    <div className="animate-fade-in">
+      <form className="card p-4 mb-4 flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted">🔍</span>
+          <input
+            name="q"
+            defaultValue={q}
+            placeholder="Search admin, action, book code or details"
+            className="input pl-10"
+          />
+        </div>
+        <button className="btn-primary">Search</button>
       </form>
 
-      <p className="mb-3 text-sm text-gray-600">
+      <p className="mb-4 text-sm text-muted">
         {result.total} entr{result.total === 1 ? "y" : "ies"} (newest first, Indian time)
       </p>
 
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[720px] text-left text-sm">
+      <div className="table-wrapper">
+        <table className="min-w-[720px]">
           <thead>
-            <tr className="border-b">
-              <th className="p-2">When</th>
-              <th className="p-2">Admin</th>
-              <th className="p-2">Action</th>
-              <th className="p-2">Target</th>
-              <th className="p-2">Details</th>
+            <tr>
+              <th>When</th>
+              <th>Admin</th>
+              <th>Action</th>
+              <th>Target</th>
+              <th>Details</th>
             </tr>
           </thead>
           <tbody>
             {result.entries.map((e) => (
-              <tr key={e.id} className="border-b align-top">
-                <td className="p-2 whitespace-nowrap">
+              <tr key={e.id} className="align-top">
+                <td className="whitespace-nowrap text-muted">
                   {new Date(e.created_at).toLocaleString("en-IN", {
                     timeZone: "Asia/Kolkata",
                     dateStyle: "medium",
                     timeStyle: "short",
                   })}
                 </td>
-                <td className="p-2">{e.admin_username}</td>
-                <td className="p-2 font-mono text-xs">{e.action}</td>
-                <td className="p-2">{e.target ?? "—"}</td>
-                <td className="p-2">{e.details ?? "—"}</td>
+                <td className="font-medium">{e.admin_username}</td>
+                <td>
+                  <span className="badge badge-muted font-mono text-xs">{e.action}</span>
+                </td>
+                <td className="text-muted">{e.target ?? "—"}</td>
+                <td className="text-muted text-sm max-w-xs truncate">{e.details ?? "—"}</td>
               </tr>
             ))}
           </tbody>
@@ -71,7 +78,9 @@ async function AuditContent({ searchParams }: { searchParams: SearchParams }) {
 
       <Pager basePath="/admin/audit" params={{ q }} page={result.page} pages={result.pages} />
 
-      <Link href="/admin" className="mt-6 inline-block underline">Back to dashboard</Link>
-    </>
+      <Link href="/admin" className="mt-6 inline-flex text-sm text-muted hover:text-primary transition-colors">
+        ← Back to dashboard
+      </Link>
+    </div>
   );
 }

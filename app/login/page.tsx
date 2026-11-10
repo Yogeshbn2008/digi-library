@@ -14,38 +14,77 @@ const MESSAGES: Record<string, string> = {
 
 export default function StudentLoginPage({ searchParams }: { searchParams: SearchParams }) {
   return (
-    <main className="mx-auto max-w-sm p-6">
-      <h1 className="mb-4 text-2xl font-bold">Student login</h1>
-      <Suspense>
-        <LoginForm searchParams={searchParams} />
-      </Suspense>
+    <main className="min-h-[80vh] flex items-center justify-center px-6 py-12">
+      <div className="w-full max-w-sm animate-fade-in-up">
+        {/* Branding */}
+        <div className="text-center mb-8">
+          <span className="text-5xl mb-4 block">📚</span>
+          <h1 className="text-2xl font-bold tracking-tight">Welcome back</h1>
+          <p className="text-muted text-sm mt-1">Sign in to your student account</p>
+        </div>
+
+        {/* Card */}
+        <div className="card p-6">
+          <Suspense>
+            <LoginForm searchParams={searchParams} />
+          </Suspense>
+        </div>
+
+        {/* Footer links */}
+        <div className="mt-6 text-center space-y-2">
+          <p className="text-sm text-muted">
+            New here?{" "}
+            <Link href="/register" className="text-primary font-medium hover:underline">
+              Request access
+            </Link>
+          </p>
+          <p className="text-sm">
+            <Link href="/" className="text-muted hover:text-foreground transition-colors">
+              ← Back to the library
+            </Link>
+          </p>
+        </div>
+      </div>
     </main>
   );
 }
 
 async function LoginForm({ searchParams }: { searchParams: SearchParams }) {
   const { error, msg } = await searchParams;
-  const box = "w-full rounded border p-2";
 
   return (
     <>
-      {msg && <p className="mb-3 rounded bg-green-100 p-2 text-sm text-green-800">{msg}</p>}
+      {msg && <div className="alert alert-success mb-4">{msg}</div>}
       {error && (
-        <p className="mb-3 rounded bg-red-100 p-2 text-sm text-red-700">
+        <div className="alert alert-danger mb-4">
           {MESSAGES[error] ?? MESSAGES["1"]}
-        </p>
+        </div>
       )}
-      <form action={loginStudent} className="space-y-2">
-        <input name="registration_no" placeholder="Registration number" required maxLength={30} autoComplete="username" className={box} />
-        <input name="password" type="password" placeholder="Password" required autoComplete="current-password" className={box} />
-        <button className="w-full rounded bg-black p-2 text-white">Log in</button>
+      <form action={loginStudent} className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium mb-1.5">Registration Number</label>
+          <input
+            name="registration_no"
+            placeholder="e.g. 2024CSE001"
+            required
+            maxLength={30}
+            autoComplete="username"
+            className="input"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1.5">Password</label>
+          <input
+            name="password"
+            type="password"
+            placeholder="Enter your password"
+            required
+            autoComplete="current-password"
+            className="input"
+          />
+        </div>
+        <button className="btn-primary w-full">Log in →</button>
       </form>
-      <p className="mt-4 text-sm">
-        New here? <Link href="/register" className="underline">Request access</Link>
-      </p>
-      <p className="mt-2 text-sm">
-        <Link href="/" className="underline">Back to the library</Link>
-      </p>
     </>
   );
 }

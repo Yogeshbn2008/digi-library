@@ -12,9 +12,11 @@ const fmt = (d: Date | null) =>
 
 export default function LoansPage({ searchParams }: { searchParams: SearchParams }) {
   return (
-    <main className="mx-auto max-w-5xl p-6">
-      <h1 className="mb-4 text-2xl font-bold">Loan history</h1>
-      <Suspense fallback={<p className="text-gray-500">Loading...</p>}>
+    <main className="mx-auto max-w-6xl px-6 py-8">
+      <h1 className="text-2xl font-bold tracking-tight mb-6 flex items-center gap-2">
+        📋 Loan history
+      </h1>
+      <Suspense fallback={<div className="card p-12 text-center animate-pulse-subtle"><div className="h-6 w-32 bg-muted-bg rounded mx-auto" /></div>}>
         <LoansContent searchParams={searchParams} />
       </Suspense>
     </main>
@@ -33,64 +35,67 @@ async function LoansContent({ searchParams }: { searchParams: SearchParams }) {
   const today = todayIST();
 
   return (
-    <>
-      <form className="mb-3 flex flex-col gap-2 sm:flex-row">
-        <input
-          name="q"
-          defaultValue={q}
-          placeholder="Search borrower, registration no., book title or code"
-          className="flex-1 rounded border p-2"
-        />
-        <select name="filter" defaultValue={safeFilter} className="rounded border p-2">
+    <div className="animate-fade-in">
+      <form className="card p-4 mb-4 flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted">🔍</span>
+          <input
+            name="q"
+            defaultValue={q}
+            placeholder="Search borrower, reg. no., book title or code"
+            className="input pl-10"
+          />
+        </div>
+        <select name="filter" defaultValue={safeFilter} className="input sm:w-44">
           <option value="all">All loans</option>
           <option value="open">Not returned</option>
           <option value="overdue">Overdue</option>
           <option value="returned">Returned</option>
         </select>
-        <button className="rounded bg-black px-4 text-white">Search</button>
+        <button className="btn-primary">Search</button>
       </form>
 
-      <p className="mb-3 text-sm text-gray-600">
+      <p className="mb-4 text-sm text-muted">
         {result.total} loan{result.total === 1 ? "" : "s"} found
       </p>
 
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[760px] text-left text-sm">
+      <div className="table-wrapper">
+        <table className="min-w-[760px]">
           <thead>
-            <tr className="border-b">
-              <th className="p-2">Book</th>
-              <th className="p-2">Borrower</th>
-              <th className="p-2">Issued</th>
-              <th className="p-2">Due</th>
-              <th className="p-2">Returned</th>
-              <th className="p-2">Issued by</th>
+            <tr>
+              <th>Book</th>
+              <th>Borrower</th>
+              <th>Issued</th>
+              <th>Due</th>
+              <th>Returned</th>
+              <th>Issued by</th>
             </tr>
           </thead>
           <tbody>
             {result.loans.map((l) => {
               const overdue = !l.return_date && dateToIso(new Date(l.due_date)) < today;
               return (
-                <tr key={l.id} className="border-b">
-                  <td className="p-2">
-                    {l.title}
-                    <div className="text-xs text-gray-500">{l.book_code ?? "no code"}</div>
+                <tr key={l.id}>
+                  <td>
+                    <span className="font-medium">{l.title}</span>
+                    <div className="text-xs text-muted">{l.book_code ?? "no code"}</div>
                   </td>
-                  <td className="p-2">
-                    {l.borrower_name}
-                    <div className="text-xs text-gray-500">{l.registration_no}</div>
+                  <td>
+                    <span className="font-medium">{l.borrower_name}</span>
+                    <div className="text-xs text-muted">{l.registration_no}</div>
                   </td>
-                  <td className="p-2">{fmt(l.issue_date)}</td>
-                  <td className="p-2">{fmt(l.due_date)}</td>
-                  <td className="p-2">
+                  <td className="text-muted">{fmt(l.issue_date)}</td>
+                  <td className="text-muted">{fmt(l.due_date)}</td>
+                  <td>
                     {l.return_date ? (
-                      fmt(l.return_date)
+                      <span className="badge badge-success">{fmt(l.return_date)}</span>
                     ) : overdue ? (
-                      <span className="font-semibold text-red-600">Overdue</span>
+                      <span className="badge badge-danger">⚠ Overdue</span>
                     ) : (
-                      <span className="text-orange-600">Not returned yet</span>
+                      <span className="badge badge-warning">Pending</span>
                     )}
                   </td>
-                  <td className="p-2">{l.issued_by ?? "—"}</td>
+                  <td className="text-muted">{l.issued_by ?? "—"}</td>
                 </tr>
               );
             })}
@@ -105,7 +110,9 @@ async function LoansContent({ searchParams }: { searchParams: SearchParams }) {
         pages={result.pages}
       />
 
-      <Link href="/admin" className="mt-6 inline-block underline">Back to dashboard</Link>
-    </>
+      <Link href="/admin" className="mt-6 inline-flex text-sm text-muted hover:text-primary transition-colors">
+        ← Back to dashboard
+      </Link>
+    </div>
   );
 }

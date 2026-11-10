@@ -13,9 +13,8 @@ type Props = {
 
 export default function IssuePage({ params, searchParams }: Props) {
   return (
-    <main className="mx-auto max-w-xl p-6">
-      <h1 className="mb-4 text-2xl font-bold">Issue book</h1>
-      <Suspense fallback={<p className="text-gray-500">Loading...</p>}>
+    <main className="mx-auto max-w-xl px-6 py-8">
+      <Suspense fallback={<div className="animate-pulse-subtle"><div className="h-8 w-40 bg-muted-bg rounded mb-6" /><div className="card p-6"><div className="h-48 bg-muted-bg rounded" /></div></div>}>
         <IssueForm params={params} searchParams={searchParams} />
       </Suspense>
     </main>
@@ -34,40 +33,63 @@ async function IssueForm({ params, searchParams }: Props) {
 
   if (book.status !== "available") {
     return (
-      <>
-        <p className="mb-3">“{book.title}” is currently borrowed.</p>
-        <Link href="/admin" className="underline">Back to dashboard</Link>
-      </>
+      <div className="animate-fade-in text-center py-12">
+        <p className="text-4xl mb-4">🚫</p>
+        <p className="text-lg font-medium mb-2">&ldquo;{book.title}&rdquo; is currently borrowed.</p>
+        <Link href="/admin" className="btn-primary mt-4 inline-flex">Back to dashboard</Link>
+      </div>
     );
   }
 
   const today = todayIST();
 
   return (
-    <>
-      <p className="mb-4 text-gray-600">
-        {book.title} · {book.author}
-      </p>
-      {error && <p className="mb-3 rounded bg-red-100 p-2 text-sm text-red-700">{error}</p>}
-      <form action={issueBook} className="space-y-2">
-        <input type="hidden" name="bookId" value={book.id} />
-        <input name="borrowerName" placeholder="Borrower name" required maxLength={100} className="w-full rounded border p-2" />
-        <input name="registrationNo" placeholder="Registration number" required maxLength={30} className="w-full rounded border p-2" />
-        <label className="block text-sm text-gray-600">Due date</label>
-        <input
-          type="date"
-          name="dueDate"
-          required
-          min={today}
-          max={addDays(today, 90)}
-          defaultValue={addDays(today, 14)}
-          className="w-full rounded border p-2"
-        />
-        <div className="flex gap-3 pt-2">
-          <button className="rounded bg-black px-4 py-2 text-white">Issue book</button>
-          <Link href="/admin" className="px-4 py-2 underline">Cancel</Link>
+    <div className="animate-fade-in">
+      <h1 className="text-2xl font-bold tracking-tight mb-2 flex items-center gap-2">
+        📤 Issue book
+      </h1>
+
+      {/* Book info */}
+      <div className="card p-4 mb-6 flex items-center gap-4">
+        <span className="text-3xl">📕</span>
+        <div>
+          <p className="font-semibold">{book.title}</p>
+          <p className="text-sm text-muted">{book.author ?? "Author not listed"}</p>
         </div>
-      </form>
-    </>
+        <span className="badge badge-success ml-auto">Available</span>
+      </div>
+
+      {error && <div className="alert alert-danger mb-4">{error}</div>}
+
+      <div className="card p-6">
+        <form action={issueBook} className="space-y-4">
+          <input type="hidden" name="bookId" value={book.id} />
+          <div>
+            <label className="block text-sm font-medium mb-1.5">Borrower name</label>
+            <input name="borrowerName" placeholder="Full name of the borrower" required maxLength={100} className="input" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1.5">Registration number</label>
+            <input name="registrationNo" placeholder="e.g. 2024CSE001" required maxLength={30} className="input" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1.5">Due date</label>
+            <input
+              type="date"
+              name="dueDate"
+              required
+              min={today}
+              max={addDays(today, 90)}
+              defaultValue={addDays(today, 14)}
+              className="input"
+            />
+          </div>
+          <div className="flex gap-3 pt-2">
+            <button className="btn-primary">Issue book →</button>
+            <Link href="/admin" className="btn-secondary">Cancel</Link>
+          </div>
+        </form>
+      </div>
+    </div>
   );
 }

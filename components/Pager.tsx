@@ -21,17 +21,27 @@ export default function Pager({
   };
 
   return (
-    <nav className="mt-6 flex items-center justify-between text-sm">
+    <nav className="mt-8 flex items-center justify-center gap-2">
       {page > 1 ? (
-        <Link href={href(page - 1)} className="underline">Previous</Link>
+        <Link href={href(page - 1)} className="btn-secondary text-sm py-2 px-4">
+          ← Previous
+        </Link>
       ) : (
-        <span className="text-gray-400">Previous</span>
+        <span className="btn-secondary text-sm py-2 px-4 opacity-40 cursor-not-allowed">
+          ← Previous
+        </span>
       )}
-      <span>Page {page} of {pages}</span>
+      <span className="px-4 py-2 text-sm font-medium text-muted">
+        Page {page} of {pages}
+      </span>
       {page < pages ? (
-        <Link href={href(page + 1)} className="underline">Next</Link>
+        <Link href={href(page + 1)} className="btn-secondary text-sm py-2 px-4">
+          Next →
+        </Link>
       ) : (
-        <span className="text-gray-400">Next</span>
+        <span className="btn-secondary text-sm py-2 px-4 opacity-40 cursor-not-allowed">
+          Next →
+        </span>
       )}
     </nav>
   );

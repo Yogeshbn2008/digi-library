@@ -24,9 +24,11 @@ const when = (d: Date | null) =>
 
 export default function StudentsPage({ searchParams }: { searchParams: SearchParams }) {
   return (
-    <main className="mx-auto max-w-5xl p-6">
-      <h1 className="mb-2 text-2xl font-bold">Student requests</h1>
-      <Suspense fallback={<p className="text-gray-500">Loading...</p>}>
+    <main className="mx-auto max-w-6xl px-6 py-8">
+      <h1 className="text-2xl font-bold tracking-tight mb-2 flex items-center gap-2">
+        👥 Student requests
+      </h1>
+      <Suspense fallback={<div className="card p-12 text-center animate-pulse-subtle"><div className="h-6 w-32 bg-muted-bg rounded mx-auto" /></div>}>
         <StudentsContent searchParams={searchParams} />
       </Suspense>
     </main>
@@ -34,11 +36,17 @@ export default function StudentsPage({ searchParams }: { searchParams: SearchPar
 }
 
 function StatusButton({ id, status, label }: { id: number; status: string; label: string }) {
+  const styles: Record<string, string> = {
+    Approve: "btn-primary text-xs py-1 px-3",
+    Reject: "btn-danger text-xs py-1 px-3",
+    Block: "btn-danger text-xs py-1 px-3",
+    Unblock: "btn-secondary text-xs py-1 px-3",
+  };
   return (
     <form action={setStudentStatus}>
       <input type="hidden" name="id" value={id} />
       <input type="hidden" name="status" value={status} />
-      <button className="text-blue-600 underline">{label}</button>
+      <button className={styles[label] ?? "btn-secondary text-xs py-1 px-3"}>{label}</button>
     </form>
   );
 }
@@ -53,65 +61,79 @@ async function StudentsContent({ searchParams }: { searchParams: SearchParams })
 
   const result = await searchStudents({ q, status: safeStatus, page: Number(page) || 1 });
 
+  const statusBadge = (s: string) => {
+    const map: Record<string, string> = {
+      pending: "badge-warning",
+      approved: "badge-success",
+      rejected: "badge-danger",
+      blocked: "badge-danger",
+    };
+    return map[s] ?? "badge-muted";
+  };
+
   return (
-    <>
-      <p className="mb-4 text-sm text-gray-600">
-        Before approving, check that the name matches the registration number in the
-        hostel records (or confirm in person). Approved students can see their own
-        borrowed books.
-      </p>
+    <div className="animate-fade-in">
+      <div className="alert alert-warning mb-6 text-sm">
+        💡 Before approving, check that the name matches the registration number in the
+        hostel records (or confirm in person). Approved students can see their own borrowed books.
+      </div>
 
-      {msg && <p className="mb-3 rounded bg-green-100 p-2 text-sm text-green-800">{msg}</p>}
-      {error && <p className="mb-3 rounded bg-red-100 p-2 text-sm text-red-700">{error}</p>}
+      {msg && <div className="alert alert-success mb-4 animate-slide-in">{msg}</div>}
+      {error && <div className="alert alert-danger mb-4 animate-slide-in">{error}</div>}
 
-      <form className="mb-3 flex flex-col gap-2 sm:flex-row">
-        <input
-          name="q"
-          defaultValue={q}
-          placeholder="Search registration number or name"
-          className="flex-1 rounded border p-2"
-        />
-        <select name="status" defaultValue={safeStatus} className="rounded border p-2">
+      <form className="card p-4 mb-4 flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted">🔍</span>
+          <input
+            name="q"
+            defaultValue={q}
+            placeholder="Search registration number or name"
+            className="input pl-10"
+          />
+        </div>
+        <select name="status" defaultValue={safeStatus} className="input sm:w-52">
           <option value="pending">Waiting for approval</option>
           <option value="approved">Approved</option>
           <option value="rejected">Rejected</option>
           <option value="blocked">Blocked</option>
           <option value="all">All</option>
         </select>
-        <button className="rounded bg-black px-4 text-white">Search</button>
+        <button className="btn-primary">Search</button>
       </form>
 
-      <p className="mb-3 text-sm text-gray-600">
+      <p className="mb-4 text-sm text-muted">
         {result.total} student{result.total === 1 ? "" : "s"} found
       </p>
 
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[760px] text-left text-sm">
+      <div className="table-wrapper">
+        <table className="min-w-[760px]">
           <thead>
-            <tr className="border-b">
-              <th className="p-2">Registration no.</th>
-              <th className="p-2">Name</th>
-              <th className="p-2">Status</th>
-              <th className="p-2">Requested</th>
-              <th className="p-2">Last login</th>
-              <th className="p-2">Actions</th>
+            <tr>
+              <th>Reg. No.</th>
+              <th>Name</th>
+              <th>Status</th>
+              <th>Requested</th>
+              <th>Last Login</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             {result.students.map((s) => (
-              <tr key={s.id} className="border-b align-top">
-                <td className="p-2">{s.registration_no}</td>
-                <td className="p-2">{s.name}</td>
-                <td className="p-2">
-                  {s.status}
+              <tr key={s.id} className="align-top">
+                <td className="font-mono text-sm">{s.registration_no}</td>
+                <td className="font-medium">{s.name}</td>
+                <td>
+                  <span className={`badge ${statusBadge(s.status)}`}>
+                    {s.status}
+                  </span>
                   {s.decided_by && (
-                    <div className="text-xs text-gray-500">by {s.decided_by}</div>
+                    <div className="text-xs text-muted mt-1">by {s.decided_by}</div>
                   )}
                 </td>
-                <td className="p-2">{when(s.created_at)}</td>
-                <td className="p-2">{when(s.last_login_at)}</td>
-                <td className="p-2">
-                  <div className="flex flex-wrap items-center gap-3">
+                <td className="text-muted text-sm">{when(s.created_at)}</td>
+                <td className="text-muted text-sm">{when(s.last_login_at)}</td>
+                <td>
+                  <div className="flex flex-wrap items-center gap-2">
                     {s.status === "pending" && (
                       <>
                         <StatusButton id={s.id} status="approved" label="Approve" />
@@ -129,7 +151,7 @@ async function StudentsContent({ searchParams }: { searchParams: SearchParams })
                     )}
                   </div>
                   {s.status === "approved" && (
-                    <form action={resetStudentPassword} className="mt-2 flex gap-2">
+                    <form action={resetStudentPassword} className="mt-2 flex gap-2 items-center">
                       <input type="hidden" name="id" value={s.id} />
                       <input
                         name="password"
@@ -139,9 +161,9 @@ async function StudentsContent({ searchParams }: { searchParams: SearchParams })
                         maxLength={72}
                         required
                         autoComplete="off"
-                        className="w-36 rounded border p-1 text-xs"
+                        className="input w-36 text-xs py-1"
                       />
-                      <button className="text-xs text-blue-600 underline">Reset</button>
+                      <button className="btn-secondary text-xs py-1 px-2">Reset</button>
                     </form>
                   )}
                 </td>
@@ -158,7 +180,9 @@ async function StudentsContent({ searchParams }: { searchParams: SearchParams })
         pages={result.pages}
       />
 
-      <Link href="/admin" className="mt-6 inline-block underline">Back to dashboard</Link>
-    </>
+      <Link href="/admin" className="mt-6 inline-flex text-sm text-muted hover:text-primary transition-colors">
+        ← Back to dashboard
+      </Link>
+    </div>
   );
 }

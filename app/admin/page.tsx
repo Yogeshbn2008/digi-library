@@ -22,9 +22,19 @@ const fmt = (d: Date | null) =>
 
 export default function AdminHome({ searchParams }: { searchParams: SearchParams }) {
   return (
-    <main className="mx-auto max-w-5xl p-6">
-      <h1 className="mb-2 text-2xl font-bold">Admin Dashboard</h1>
-      <Suspense fallback={<p className="text-gray-500">Loading...</p>}>
+    <main className="mx-auto max-w-6xl px-6 py-8">
+      <Suspense
+        fallback={
+          <div className="space-y-4 animate-pulse-subtle">
+            <div className="h-8 w-56 bg-muted-bg rounded" />
+            <div className="grid grid-cols-4 gap-4 mt-6">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="card p-6"><div className="h-16 bg-muted-bg rounded" /></div>
+              ))}
+            </div>
+          </div>
+        }
+      >
         <AdminContent searchParams={searchParams} />
       </Suspense>
     </main>
@@ -34,7 +44,7 @@ export default function AdminHome({ searchParams }: { searchParams: SearchParams
 async function AdminContent({ searchParams }: { searchParams: SearchParams }) {
   const admin = await requireAdmin();
   const { msg, error, q, page } = await searchParams;
-      const [result, overdue, genres, pendingStudents] = await Promise.all([
+  const [result, overdue, genres, pendingStudents] = await Promise.all([
     searchAdminBooks({ q, page: Number(page) || 1 }),
     getOverdue(),
     getGenres(),
@@ -43,144 +53,197 @@ async function AdminContent({ searchParams }: { searchParams: SearchParams }) {
   const books = result.books;
 
   return (
-    <>
-      <div className="mb-4 flex items-center justify-between">
-        <p>Logged in as {admin.name}</p>
+    <div className="animate-fade-in">
+      {/* Header */}
+      <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
+            <span>🛡️</span> Admin Dashboard
+          </h1>
+          <p className="text-sm text-muted mt-1">Welcome, {admin.name}</p>
+        </div>
         <form action={logout}>
-          <button className="rounded bg-black px-4 py-2 text-white">Log out</button>
+          <button className="btn-secondary text-danger hover:text-danger">
+            Log out
+          </button>
         </form>
       </div>
 
-      {msg && <p className="mb-3 rounded bg-green-100 p-2 text-sm text-green-800">{msg}</p>}
-      {error && <p className="mb-3 rounded bg-red-100 p-2 text-sm text-red-700">{error}</p>}
+      {/* Alerts */}
+      {msg && <div className="alert alert-success mb-4 animate-slide-in">{msg}</div>}
+      {error && <div className="alert alert-danger mb-4 animate-slide-in">{error}</div>}
 
+      {/* Overdue alert */}
       {overdue.length > 0 && (
-        <section className="mb-8 rounded border border-red-300 p-4">
-          <h2 className="mb-2 text-lg font-semibold text-red-700">
-            Overdue ({overdue.length})
+        <div className="card border-danger/40 bg-danger-bg/20 p-5 mb-6 animate-slide-in">
+          <h2 className="text-base font-semibold text-danger flex items-center gap-2 mb-3">
+            ⚠️ Overdue ({overdue.length})
           </h2>
-          <ul className="space-y-1 text-sm">
+          <div className="space-y-2">
             {overdue.map((b) => (
-              <li key={b.id}>
-                <strong>{b.title}</strong> — {b.borrower_name ?? "unknown borrower"}
-                {b.registration_no ? ` (${b.registration_no})` : ""}, was due {fmt(b.due_date)}
-              </li>
+              <div key={b.id} className="flex items-center justify-between text-sm">
+                <span>
+                  <strong>{b.title}</strong>
+                  <span className="text-muted"> — {b.borrower_name ?? "unknown borrower"}
+                  {b.registration_no ? ` (${b.registration_no})` : ""}</span>
+                </span>
+                <span className="badge badge-danger">Due {fmt(b.due_date)}</span>
+              </div>
             ))}
-          </ul>
-        </section>
+          </div>
+        </div>
       )}
 
-            <div className="mb-6 flex flex-wrap gap-4">
-        <Link href="/admin/import" className="text-blue-600 underline">
-          Import books from CSV
+      {/* Navigation grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8 stagger">
+        <Link href="/admin/students" className="card card-interactive p-4 text-center animate-fade-in group">
+          <span className="text-2xl block mb-2 group-hover:scale-110 transition-transform">👥</span>
+          <span className="text-sm font-medium">Students</span>
+          {pendingStudents > 0 && (
+            <span className="badge badge-warning ml-1">{pendingStudents}</span>
+          )}
         </Link>
-        <Link href="/admin/admins" className="text-blue-600 underline">
-          Manage admins
+        <Link href="/admin/loans" className="card card-interactive p-4 text-center animate-fade-in group">
+          <span className="text-2xl block mb-2 group-hover:scale-110 transition-transform">📋</span>
+          <span className="text-sm font-medium">Loan History</span>
         </Link>
-         <Link href="/admin/loans" className="text-blue-600 underline">
-          Loan history
+        <Link href="/admin/reports" className="card card-interactive p-4 text-center animate-fade-in group">
+          <span className="text-2xl block mb-2 group-hover:scale-110 transition-transform">📊</span>
+          <span className="text-sm font-medium">Reports</span>
         </Link>
-        <Link href="/admin/audit" className="text-blue-600 underline">
-          Audit log
+        <Link href="/admin/audit" className="card card-interactive p-4 text-center animate-fade-in group">
+          <span className="text-2xl block mb-2 group-hover:scale-110 transition-transform">🔍</span>
+          <span className="text-sm font-medium">Audit Log</span>
         </Link>
-        <Link href="/admin/reports" className="text-blue-600 underline">
-          Reports
+        <Link href="/admin/admins" className="card card-interactive p-4 text-center animate-fade-in group">
+          <span className="text-2xl block mb-2 group-hover:scale-110 transition-transform">⚙️</span>
+          <span className="text-sm font-medium">Admins</span>
         </Link>
-         <Link href="/admin/students" className="text-blue-600 underline">
-          Student requests{pendingStudents > 0 ? ` (${pendingStudents} waiting)` : ""}
+        <Link href="/admin/import" className="card card-interactive p-4 text-center animate-fade-in group">
+          <span className="text-2xl block mb-2 group-hover:scale-110 transition-transform">📥</span>
+          <span className="text-sm font-medium">Import CSV</span>
         </Link>
-        <a href="/admin/export/books" className="text-blue-600 underline">
-          Download books (CSV)
+        <a href="/admin/export/books" className="card card-interactive p-4 text-center animate-fade-in group">
+          <span className="text-2xl block mb-2 group-hover:scale-110 transition-transform">📤</span>
+          <span className="text-sm font-medium">Export Books</span>
         </a>
-        <a href="/admin/export/loans" className="text-blue-600 underline">
-          Download loan history (CSV)
+        <a href="/admin/export/loans" className="card card-interactive p-4 text-center animate-fade-in group">
+          <span className="text-2xl block mb-2 group-hover:scale-110 transition-transform">📤</span>
+          <span className="text-sm font-medium">Export Loans</span>
         </a>
       </div>
 
-      <h2 className="mb-2 text-lg font-semibold">Add a book</h2>
-            <form action={addBook} className="mb-8 grid gap-2 sm:grid-cols-2">
-        <input name="book_code" placeholder="Book code (e.g. MBBS-120)" required maxLength={30} className="rounded border p-2" />
-        <input name="title" placeholder="Title" required maxLength={255} className="rounded border p-2" />
-        <input name="author" placeholder="Author (optional)" maxLength={255} className="rounded border p-2" />
-        <input name="genre" list="categories" placeholder="Category" required maxLength={100} className="rounded border p-2" />
-        <datalist id="categories">
-          {genres.map((g) => (
-            <option key={g} value={g} />
-          ))}
-        </datalist>
-        <input name="isbn" placeholder="ISBN (optional)" maxLength={20} className="rounded border p-2" />
-        <button className="rounded bg-black p-2 text-white sm:col-span-2">Add book</button>
-      </form>
-
-      <h2 className="mb-2 text-lg font-semibold">All books ({result.total})</h2>
-            <form className="mb-3 flex flex-col gap-2 sm:flex-row">
-        <input
-          name="q"
-          defaultValue={q}
-          placeholder="Search title, author, code, borrower or registration no."
-          className="flex-1 rounded border p-2"
-        />
-        <button className="rounded bg-black px-4 text-white">Search</button>
-      </form>
-
-      <div className="overflow-x-auto">
-                <table className="w-full min-w-[720px] text-left text-sm">
-          <thead>
-            <tr className="border-b">
-              <th className="p-2">Title</th>
-              <th className="p-2">Category</th>
-              <th className="p-2">Status</th>
-              <th className="p-2">Borrower</th>
-              <th className="p-2">Due</th>
-              <th className="p-2">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {books.map((b) => (
-              <tr key={b.id} className="border-b">
-                <td className="p-2">
-                  {b.title}
-                  <div className="text-xs text-gray-500">
-                    {b.book_code ?? "no code"} · {b.author ?? "no author"}
-                  </div>
-                </td>
-                <td className="p-2">{b.genre}</td>
-                <td className="p-2">{b.status}</td>
-                <td className="p-2">
-                  {b.borrower_name
-                    ? `${b.borrower_name} (${b.registration_no})`
-                    : "—"}
-                </td>
-                <td className="p-2">{b.status === "borrowed" ? fmt(b.due_date) : "—"}</td>
-                <td className="p-2">
-                  <div className="flex flex-wrap items-center gap-3">
-                    {b.status === "available" && (
-                      <Link href={`/admin/books/${b.id}/issue`} className="text-green-700 underline">
-                        Issue
-                      </Link>
-                    )}
-                    {b.status === "borrowed" && (
-                      <form action={returnBook}>
-                        <input type="hidden" name="bookId" value={b.id} />
-                        <button className="text-orange-600 underline">Return</button>
-                      </form>
-                    )}
-                    <Link href={`/admin/books/${b.id}/edit`} className="text-blue-600 underline">
-                      Edit
-                    </Link>
-                    <form action={deleteBook}>
-                      <input type="hidden" name="id" value={b.id} />
-                      <DeleteButton />
-                    </form>
-                  </div>
-                </td>
-              </tr>
+      {/* Add a book */}
+      <section className="card p-6 mb-8">
+        <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+          ➕ Add a book
+        </h2>
+        <form action={addBook} className="grid gap-3 sm:grid-cols-2">
+          <input name="book_code" placeholder="Book code (e.g. MBBS-120)" required maxLength={30} className="input" />
+          <input name="title" placeholder="Title" required maxLength={255} className="input" />
+          <input name="author" placeholder="Author (optional)" maxLength={255} className="input" />
+          <input name="genre" list="categories" placeholder="Category" required maxLength={100} className="input" />
+          <datalist id="categories">
+            {genres.map((g) => (
+              <option key={g} value={g} />
             ))}
-          </tbody>
-        </table>
-      </div>
+          </datalist>
+          <input name="isbn" placeholder="ISBN (optional)" maxLength={20} className="input" />
+          <button className="btn-primary sm:col-span-2">Add book</button>
+        </form>
+      </section>
 
-      <Pager basePath="/admin" params={{ q }} page={result.page} pages={result.pages} />
-    </>
+      {/* All books */}
+      <section>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
+          <h2 className="text-lg font-semibold flex items-center gap-2">
+            📚 All books
+            <span className="badge badge-muted">{result.total}</span>
+          </h2>
+        </div>
+
+        <form className="card p-4 mb-4 flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted">🔍</span>
+            <input
+              name="q"
+              defaultValue={q}
+              placeholder="Search title, author, code, borrower or reg. no."
+              className="input pl-10"
+            />
+          </div>
+          <button className="btn-primary">Search</button>
+        </form>
+
+        <div className="table-wrapper">
+          <table className="min-w-[720px]">
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Category</th>
+                <th>Status</th>
+                <th>Borrower</th>
+                <th>Due</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {books.map((b) => (
+                <tr key={b.id}>
+                  <td>
+                    <span className="font-medium">{b.title}</span>
+                    <div className="text-xs text-muted mt-0.5">
+                      {b.book_code ?? "no code"} · {b.author ?? "no author"}
+                    </div>
+                  </td>
+                  <td><span className="badge badge-muted">{b.genre}</span></td>
+                  <td>
+                    {b.status === "available" ? (
+                      <span className="badge badge-success">Available</span>
+                    ) : b.status === "borrowed" ? (
+                      <span className="badge badge-warning">Borrowed</span>
+                    ) : (
+                      <span className="badge badge-muted">{b.status}</span>
+                    )}
+                  </td>
+                  <td className="text-sm">
+                    {b.borrower_name
+                      ? <><span className="font-medium">{b.borrower_name}</span> <span className="text-muted text-xs">({b.registration_no})</span></>
+                      : <span className="text-muted">—</span>}
+                  </td>
+                  <td className="text-sm text-muted">
+                    {b.status === "borrowed" ? fmt(b.due_date) : "—"}
+                  </td>
+                  <td>
+                    <div className="flex flex-wrap items-center gap-2">
+                      {b.status === "available" && (
+                        <Link href={`/admin/books/${b.id}/issue`} className="btn-primary text-xs py-1 px-3">
+                          Issue
+                        </Link>
+                      )}
+                      {b.status === "borrowed" && (
+                        <form action={returnBook}>
+                          <input type="hidden" name="bookId" value={b.id} />
+                          <button className="btn-secondary text-xs py-1 px-3 text-warning hover:text-warning">Return</button>
+                        </form>
+                      )}
+                      <Link href={`/admin/books/${b.id}/edit`} className="btn-secondary text-xs py-1 px-3">
+                        Edit
+                      </Link>
+                      <form action={deleteBook}>
+                        <input type="hidden" name="id" value={b.id} />
+                        <DeleteButton />
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <Pager basePath="/admin" params={{ q }} page={result.page} pages={result.pages} />
+      </section>
+    </div>
   );
 }

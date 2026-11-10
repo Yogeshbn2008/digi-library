@@ -10,9 +10,11 @@ import {
 
 export default function ReportsPage() {
   return (
-    <main className="mx-auto max-w-4xl p-6">
-      <h1 className="mb-4 text-2xl font-bold">Reports</h1>
-      <Suspense fallback={<p className="text-gray-500">Loading...</p>}>
+    <main className="mx-auto max-w-5xl px-6 py-8">
+      <h1 className="text-2xl font-bold tracking-tight mb-6 flex items-center gap-2">
+        📊 Reports
+      </h1>
+      <Suspense fallback={<div className="grid grid-cols-5 gap-4 animate-pulse-subtle">{[...Array(5)].map((_, i) => <div key={i} className="stat-card"><div className="h-16 bg-muted-bg rounded" /></div>)}</div>}>
         <ReportsContent />
       </Suspense>
     </main>
@@ -29,65 +31,93 @@ async function ReportsContent() {
   ]);
 
   const stats = [
-    ["Books in library", summary.totalBooks],
-    ["Borrowed now", summary.borrowed],
-    ["Lost", summary.lost],
-    ["Unverified", summary.unverified],
-    ["Loans ever made", summary.totalLoans],
-  ] as const;
+    { icon: "📚", label: "Books in Library", value: summary.totalBooks },
+    { icon: "📖", label: "Borrowed Now", value: summary.borrowed },
+    { icon: "❌", label: "Lost", value: summary.lost },
+    { icon: "❓", label: "Unverified", value: summary.unverified },
+    { icon: "📋", label: "Total Loans", value: summary.totalLoans },
+  ];
 
   return (
-    <>
-      <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-5">
-        {stats.map(([label, value]) => (
-          <div key={label} className="rounded border p-3">
-            <div className="text-2xl font-bold">{value}</div>
-            <div className="text-xs text-gray-600">{label}</div>
+    <div className="animate-fade-in">
+      {/* Stats grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-10 stagger">
+        {stats.map((s) => (
+          <div key={s.label} className="stat-card animate-fade-in text-center">
+            <p className="text-2xl mb-2">{s.icon}</p>
+            <div className="stat-value">{s.value}</div>
+            <div className="stat-label">{s.label}</div>
           </div>
         ))}
       </div>
 
-      <h2 className="mb-2 text-lg font-semibold">Most borrowed books</h2>
-      {topBooks.length === 0 ? (
-        <p className="mb-8 text-sm text-gray-500">No loans yet.</p>
-      ) : (
-        <ol className="mb-8 list-decimal space-y-1 pl-5 text-sm">
-          {topBooks.map((b) => (
-            <li key={b.book_code ?? b.title}>
-              {b.title} <span className="text-gray-500">({b.book_code ?? "no code"})</span>{" "}
-              - {Number(b.times_borrowed)} time{Number(b.times_borrowed) === 1 ? "" : "s"}
-            </li>
-          ))}
-        </ol>
-      )}
+      {/* Most borrowed */}
+      <section className="card p-6 mb-6">
+        <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+          🏆 Most borrowed books
+        </h2>
+        {topBooks.length === 0 ? (
+          <p className="text-sm text-muted">No loans yet.</p>
+        ) : (
+          <div className="space-y-2">
+            {topBooks.map((b, i) => (
+              <div key={b.book_code ?? b.title} className="flex items-center gap-3 py-2 border-b border-border last:border-0">
+                <span className="text-lg font-bold text-muted w-8">#{i + 1}</span>
+                <div className="flex-1">
+                  <span className="font-medium">{b.title}</span>
+                  <span className="text-xs text-muted ml-2">({b.book_code ?? "no code"})</span>
+                </div>
+                <span className="badge badge-primary">
+                  {Number(b.times_borrowed)} time{Number(b.times_borrowed) === 1 ? "" : "s"}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
 
-      <h2 className="mb-2 text-lg font-semibold">Loans by category</h2>
-      {byCategory.length === 0 ? (
-        <p className="mb-8 text-sm text-gray-500">No loans yet.</p>
-      ) : (
-        <ul className="mb-8 space-y-1 text-sm">
-          {byCategory.map((c) => (
-            <li key={c.genre}>
-              {c.genre}: <strong>{Number(c.loans)}</strong>
-            </li>
-          ))}
-        </ul>
-      )}
+      {/* By category & per month side by side */}
+      <div className="grid gap-6 sm:grid-cols-2 mb-8">
+        <div className="card p-6">
+          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            📁 Loans by category
+          </h2>
+          {byCategory.length === 0 ? (
+            <p className="text-sm text-muted">No loans yet.</p>
+          ) : (
+            <div className="space-y-2">
+              {byCategory.map((c) => (
+                <div key={c.genre} className="flex items-center justify-between py-1.5">
+                  <span className="text-sm">{c.genre}</span>
+                  <span className="badge badge-muted font-bold">{Number(c.loans)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
-      <h2 className="mb-2 text-lg font-semibold">Loans per month (last 6 months)</h2>
-      {perMonth.length === 0 ? (
-        <p className="mb-8 text-sm text-gray-500">No loans in this period.</p>
-      ) : (
-        <ul className="mb-8 space-y-1 text-sm">
-          {perMonth.map((m) => (
-            <li key={m.ym}>
-              {m.ym}: <strong>{Number(m.loans)}</strong>
-            </li>
-          ))}
-        </ul>
-      )}
+        <div className="card p-6">
+          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            📅 Loans per month (last 6)
+          </h2>
+          {perMonth.length === 0 ? (
+            <p className="text-sm text-muted">No loans in this period.</p>
+          ) : (
+            <div className="space-y-2">
+              {perMonth.map((m) => (
+                <div key={m.ym} className="flex items-center justify-between py-1.5">
+                  <span className="text-sm font-mono">{m.ym}</span>
+                  <span className="badge badge-primary font-bold">{Number(m.loans)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
 
-      <Link href="/admin" className="underline">Back to dashboard</Link>
-    </>
+      <Link href="/admin" className="text-sm text-muted hover:text-primary transition-colors">
+        ← Back to dashboard
+      </Link>
+    </div>
   );
 }

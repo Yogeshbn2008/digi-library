@@ -7,11 +7,22 @@ export default function LoginPage({
   searchParams: Promise<{ error?: string }>;
 }) {
   return (
-    <main className="mx-auto max-w-sm p-6">
-      <h1 className="mb-4 text-2xl font-bold">Admin Login</h1>
-      <Suspense>
-        <LoginForm searchParams={searchParams} />
-      </Suspense>
+    <main className="min-h-[80vh] flex items-center justify-center px-6 py-12">
+      <div className="w-full max-w-sm animate-fade-in-up">
+        {/* Branding */}
+        <div className="text-center mb-8">
+          <span className="text-5xl mb-4 block">🛡️</span>
+          <h1 className="text-2xl font-bold tracking-tight">Admin Login</h1>
+          <p className="text-muted text-sm mt-1">Library management portal</p>
+        </div>
+
+        {/* Card */}
+        <div className="card p-6">
+          <Suspense>
+            <LoginForm searchParams={searchParams} />
+          </Suspense>
+        </div>
+      </div>
     </main>
   );
 }
@@ -25,30 +36,34 @@ async function LoginForm({
 
   return (
     <>
-        {error && (
-        <p className="mb-3 rounded bg-red-100 p-2 text-sm text-red-700">
+      {error && (
+        <div className="alert alert-danger mb-4">
           {error === "locked"
             ? "Too many failed attempts. Please wait 15 minutes and try again."
             : "Invalid username or password."}
-        </p>
+        </div>
       )}
-      <form action={login} className="space-y-3">
-        <input
-          name="username"
-          placeholder="Username"
-          required
-          className="w-full rounded border p-2"
-        />
-        <input
-          name="password"
-          type="password"
-          placeholder="Password"
-          required
-          className="w-full rounded border p-2"
-        />
-        <button className="w-full rounded bg-black p-2 text-white">
-          Log in
-        </button>
+      <form action={login} className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium mb-1.5">Username</label>
+          <input
+            name="username"
+            placeholder="Admin username"
+            required
+            className="input"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1.5">Password</label>
+          <input
+            name="password"
+            type="password"
+            placeholder="Enter your password"
+            required
+            className="input"
+          />
+        </div>
+        <button className="btn-primary w-full">Log in →</button>
       </form>
     </>
   );
