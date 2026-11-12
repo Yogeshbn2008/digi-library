@@ -102,3 +102,15 @@ export async function getStudentLoans(registrationNo: string) {
   );
   return rows;
 }
+
+// Log the student out everywhere except the browser making this request
+export async function destroyOtherStudentSessions(studentId: number) {
+  const store = await cookies();
+  const token = store.get(COOKIE_NAME)?.value;
+  if (!token) return;
+
+  await pool.query(
+    "DELETE FROM student_sessions WHERE student_id = ? AND token_hash <> ?",
+    [studentId, sha256(token)]
+  );
+}

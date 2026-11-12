@@ -6,7 +6,12 @@ import { RowDataPacket } from "mysql2";
 import { pool } from "@/lib/db";
 import { clientIp } from "@/lib/client-ip";
 import { isBlocked, recordAttempt, clearFailures } from "@/lib/rate-limit";
-import { createStudentSession, destroyStudentSession } from "@/lib/student-auth";
+import {
+  createStudentSession,
+  destroyStudentSession,
+  destroyOtherStudentSessions,
+  requireStudent,
+} from "@/lib/student-auth";
 import { createHash, timingSafeEqual } from "node:crypto";
 
 const REG_PATTERN = /^[A-Za-z0-9._/-]{2,30}$/;
@@ -144,4 +149,46 @@ export async function loginStudent(formData: FormData) {
 export async function logoutStudent() {
   await destroyStudentSession();
   redirect("/");
+}
+
+export async function changeStudentPassword(formData: FormData) {
+  const student = await requireStudent();
+  const back = (key: "msg" | "error", text: string) =>
+    `/my-books?${key}=${encodeURIComponent(text)}`;
+
+  const current = String(formData.get("current") ?? "").slice(0, 200);
+  const next = String(formData.get("next") ?? "");
+  const confirm = String(formData.get("confirm") ?? "");
+
+  // Same counters as the student login, so guessing here is limited too
+  const ip = await clientIp();
+  const key = `s:${student.registration_no.toLowerCase()}`.slice(0, 50);
+  const ipKey = `student:${ip}`.slice(0, 45);
+
+  if (await isBlocked(key, ipKey, 200)) {
+    redirect(back("error", "Too many failed attempts. Please wait 15 minutes and try again."));
+  }
+
+  const [rows] = await pool.query<(RowDataPacket & { password_hash: string })[]>(
+    "SELECT password_hash FROM students WHERE id = ?",
+    [student.id]
+  );
+  const ok = rows[0] ? await bcrypt.compare(current, rows[0].password_hash) : false;
+  if (!ok) {
+    await recordAttempt(key, ipKey, false);
+    redirect(back("error", "Your current password is not correct."));
+  }
+
+  if (next.length < 8 || Buffer.byteLength(next, "utf8") > 72) {
+    redirect(back("error", "New password must be 8 to 72 characters."));
+  }
+  if (next !== confirm) redirect(back("error", "The two new passwords do not match."));
+  if (next === current) redirect(back("error", "The new password must be different."));
+
+  const hash = await bcrypt.hash(next, 10);
+  await pool.query("UPDATE students SET password_hash = ? WHERE id = ?", [hash, student.id]);
+  await destroyOtherStudentSessions(student.id);
+  await clearFailures(key);
+
+  redirect(back("msg", "Password changed. Your other devices were logged out."));
 }
