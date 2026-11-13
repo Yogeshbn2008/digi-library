@@ -111,6 +111,7 @@ async function StudentsContent({ searchParams }: { searchParams: SearchParams })
             <tr>
               <th>Reg. No.</th>
               <th>Name</th>
+              <th className="p-2">Room</th>
               <th>Status</th>
               <th>Requested</th>
               <th>Last Login</th>
@@ -122,6 +123,7 @@ async function StudentsContent({ searchParams }: { searchParams: SearchParams })
               <tr key={s.id} className="align-top">
                 <td className="font-mono text-sm">{s.registration_no}</td>
                 <td className="font-medium">{s.name}</td>
+                <td className="p-2">{s.room_no ?? "—"}</td>
                 <td>
                   <span className={`badge ${statusBadge(s.status)}`}>
                     {s.status}

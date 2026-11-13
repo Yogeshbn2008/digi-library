@@ -8,6 +8,7 @@ export interface StudentRow extends RowDataPacket {
   id: number;
   registration_no: string;
   name: string;
+  room_no: string | null;
   status: "pending" | "approved" | "rejected" | "blocked";
   created_at: Date;
   decided_by: string | null;
@@ -40,8 +41,8 @@ export async function searchStudents({
     params.push(status);
   }
   if (q) {
-    conditions.push("(registration_no LIKE ? OR name LIKE ?)");
-    params.push(`%${q}%`, `%${q}%`);
+    conditions.push("(registration_no LIKE ? OR name LIKE ? OR room_no LIKE ?)");
+    params.push(`%${q}%`, `%${q}%`, `%${q}%`);
   }
   const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
   const order = status === "pending" ? "ASC" : "DESC"; // oldest requests first
@@ -55,7 +56,7 @@ export async function searchStudents({
   const current = Math.min(Math.max(1, page), pages);
 
   const [students] = await pool.query<StudentRow[]>(
-    `SELECT id, registration_no, name, status, created_at, decided_by, last_login_at
+    `SELECT id, registration_no, name, room_no, status, created_at, decided_by, last_login_at
      FROM students ${where}
      ORDER BY created_at ${order}, id ${order}
      LIMIT ? OFFSET ?`,

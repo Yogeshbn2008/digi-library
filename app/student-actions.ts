@@ -1,30 +1,35 @@
 "use server";
 
 import bcrypt from "bcryptjs";
+import { createHash, timingSafeEqual } from "node:crypto";
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { RowDataPacket } from "mysql2";
 import { pool } from "@/lib/db";
 import { clientIp } from "@/lib/client-ip";
 import { isBlocked, recordAttempt, clearFailures } from "@/lib/rate-limit";
+import { destroySession } from "@/lib/auth";
 import {
   createStudentSession,
   destroyStudentSession,
   destroyOtherStudentSessions,
   requireStudent,
 } from "@/lib/student-auth";
-import { createHash, timingSafeEqual } from "node:crypto";
 
 const REG_PATTERN = /^[A-Za-z0-9._/-]{2,30}$/;
+const ROOM_PATTERN = /^[A-Za-z0-9 ./-]{1,10}$/;
 const REQUESTS_PER_IP_PER_HOUR = 30;
 const DUMMY_HASH = bcrypt.hashSync("not-a-real-password", 10);
+
+const toRegister = (text: string) => `/register?error=${encodeURIComponent(text)}`;
+const toProfile = (key: "msg" | "error", text: string) =>
+  `/profile?${key}=${encodeURIComponent(text)}`;
 
 function codeMatches(given: string, expected: string) {
   const a = createHash("sha256").update(given.trim().toLowerCase()).digest();
   const b = createHash("sha256").update(expected.trim().toLowerCase()).digest();
   return timingSafeEqual(a, b);
 }
-
-const toRegister = (text: string) => `/register?error=${encodeURIComponent(text)}`;
 
 function hasCode(err: unknown, code: string) {
   return (
@@ -37,8 +42,10 @@ function hasCode(err: unknown, code: string) {
 export async function registerStudent(formData: FormData) {
   const reg = String(formData.get("registration_no") ?? "").trim();
   const name = String(formData.get("name") ?? "").trim();
+  const room = String(formData.get("room_no") ?? "").trim();
   const password = String(formData.get("password") ?? "");
   const confirm = String(formData.get("confirm") ?? "");
+
   const expectedCode = process.env.JOIN_CODE;
   if (expectedCode) {
     const given = String(formData.get("join_code") ?? "");
@@ -46,10 +53,14 @@ export async function registerStudent(formData: FormData) {
       redirect(toRegister("The hostel code is not correct. Ask the committee for it."));
     }
   }
+
   if (!REG_PATTERN.test(reg)) {
     redirect(toRegister("Enter your registration number (letters, numbers, . - / only)."));
   }
   if (!name || name.length > 100) redirect(toRegister("Enter your full name."));
+  if (!ROOM_PATTERN.test(room)) {
+    redirect(toRegister("Enter your room number (for example B-214)."));
+  }
   if (password.length < 8 || Buffer.byteLength(password, "utf8") > 72) {
     redirect(toRegister("Password must be 8 to 72 characters."));
   }
@@ -80,10 +91,10 @@ export async function registerStudent(formData: FormData) {
       // A rejected student may ask again
       await pool.query(
         `UPDATE students
-         SET name = ?, password_hash = ?, status = 'pending', created_ip = ?,
+         SET name = ?, room_no = ?, password_hash = ?, status = 'pending', created_ip = ?,
              created_at = NOW(), decided_at = NULL, decided_by = NULL
          WHERE id = ?`,
-        [name, hash, ip, existing.id]
+        [name, room, hash, ip, existing.id]
       );
       redirect("/login?msg=" + encodeURIComponent("Request sent again. You can log in once the committee approves it."));
     }
@@ -98,9 +109,9 @@ export async function registerStudent(formData: FormData) {
 
   try {
     await pool.query(
-      `INSERT INTO students (registration_no, name, password_hash, created_ip)
-       VALUES (?, ?, ?, ?)`,
-      [reg, name, hash, ip]
+      `INSERT INTO students (registration_no, name, room_no, password_hash, created_ip)
+       VALUES (?, ?, ?, ?, ?)`,
+      [reg, name, room, hash, ip]
     );
   } catch (err) {
     if (hasCode(err, "ER_DUP_ENTRY")) {
@@ -142,6 +153,7 @@ export async function loginStudent(formData: FormData) {
   await recordAttempt(key, ipKey, true);
   await clearFailures(key);
   await createStudentSession(student.id);
+  await destroySession(); // one role at a time: log out any admin in this browser
   await pool.query("UPDATE students SET last_login_at = NOW() WHERE id = ?", [student.id]);
   redirect("/my-books");
 }
@@ -151,10 +163,21 @@ export async function logoutStudent() {
   redirect("/");
 }
 
+export async function updateRoom(formData: FormData) {
+  const student = await requireStudent();
+  const room = String(formData.get("room_no") ?? "").trim();
+
+  if (!ROOM_PATTERN.test(room)) {
+    redirect(toProfile("error", "Enter a valid room number (for example B-214)."));
+  }
+  await pool.query("UPDATE students SET room_no = ? WHERE id = ?", [room, student.id]);
+
+  revalidatePath("/profile");
+  redirect(toProfile("msg", "Room number updated."));
+}
+
 export async function changeStudentPassword(formData: FormData) {
   const student = await requireStudent();
-  const back = (key: "msg" | "error", text: string) =>
-    `/my-books?${key}=${encodeURIComponent(text)}`;
 
   const current = String(formData.get("current") ?? "").slice(0, 200);
   const next = String(formData.get("next") ?? "");
@@ -166,7 +189,7 @@ export async function changeStudentPassword(formData: FormData) {
   const ipKey = `student:${ip}`.slice(0, 45);
 
   if (await isBlocked(key, ipKey, 200)) {
-    redirect(back("error", "Too many failed attempts. Please wait 15 minutes and try again."));
+    redirect(toProfile("error", "Too many failed attempts. Please wait 15 minutes and try again."));
   }
 
   const [rows] = await pool.query<(RowDataPacket & { password_hash: string })[]>(
@@ -176,19 +199,19 @@ export async function changeStudentPassword(formData: FormData) {
   const ok = rows[0] ? await bcrypt.compare(current, rows[0].password_hash) : false;
   if (!ok) {
     await recordAttempt(key, ipKey, false);
-    redirect(back("error", "Your current password is not correct."));
+    redirect(toProfile("error", "Your current password is not correct."));
   }
 
   if (next.length < 8 || Buffer.byteLength(next, "utf8") > 72) {
-    redirect(back("error", "New password must be 8 to 72 characters."));
+    redirect(toProfile("error", "New password must be 8 to 72 characters."));
   }
-  if (next !== confirm) redirect(back("error", "The two new passwords do not match."));
-  if (next === current) redirect(back("error", "The new password must be different."));
+  if (next !== confirm) redirect(toProfile("error", "The two new passwords do not match."));
+  if (next === current) redirect(toProfile("error", "The new password must be different."));
 
   const hash = await bcrypt.hash(next, 10);
   await pool.query("UPDATE students SET password_hash = ? WHERE id = ?", [hash, student.id]);
   await destroyOtherStudentSessions(student.id);
   await clearFailures(key);
 
-  redirect(back("msg", "Password changed. Your other devices were logged out."));
+  redirect(toProfile("msg", "Password changed. Your other devices were logged out."));
 }

@@ -1,11 +1,12 @@
 "use server";
 
 import bcrypt from "bcryptjs";
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { RowDataPacket } from "mysql2";
 import { pool } from "@/lib/db";
+import { clientIp } from "@/lib/client-ip";
 import { createSession, destroySession, getCurrentAdmin } from "@/lib/auth";
+import { destroyStudentSession } from "@/lib/student-auth";
 import { isBlocked, recordAttempt, clearFailures } from "@/lib/rate-limit";
 import { logAction } from "@/lib/audit";
 
@@ -13,12 +14,7 @@ import { logAction } from "@/lib/audit";
 // same time as a wrong password and does not reveal which usernames exist
 const DUMMY_HASH = bcrypt.hashSync("not-a-real-password", 10);
 
-async function clientIp() {
-  const h = await headers();
-  const forwarded = h.get("x-forwarded-for");
-  const ip = forwarded?.split(",")[0] ?? h.get("x-real-ip") ?? "unknown";
-  return ip.trim().slice(0, 45);
-}
+const back = (error: string) => `/login?as=committee&error=${error}`;
 
 export async function login(formData: FormData) {
   const username = String(formData.get("username") ?? "")
@@ -30,7 +26,7 @@ export async function login(formData: FormData) {
 
   if (await isBlocked(username, ip)) {
     await logAction(null, "login.blocked", username, ip);
-    redirect("/admin/login?error=locked");
+    redirect(back("locked"));
   }
 
   const [rows] = await pool.query<
@@ -45,11 +41,12 @@ export async function login(formData: FormData) {
   if (!admin || !ok) {
     await recordAttempt(username, ip, false);
     await logAction(null, "login.failed", username, ip);
-    redirect("/admin/login?error=1");
+    redirect(back("1"));
   }
 
   await recordAttempt(username, ip, true);
   await clearFailures(username);
+  await destroyStudentSession(); // one role at a time in this browser
   await createSession(admin.id);
   await logAction({ id: admin.id, username }, "login", null, ip);
   redirect("/admin");
@@ -59,5 +56,5 @@ export async function logout() {
   const me = await getCurrentAdmin();
   if (me) await logAction(me, "logout");
   await destroySession();
-  redirect("/admin/login");
+  redirect("/login?as=committee");
 }

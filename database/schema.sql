@@ -67,6 +67,7 @@ CREATE TABLE IF NOT EXISTS students (
   id INT AUTO_INCREMENT PRIMARY KEY,
   registration_no VARCHAR(30) NOT NULL,
   name VARCHAR(100) NOT NULL,
+  room_no VARCHAR(10) NULL,
   password_hash VARCHAR(255) NOT NULL,
   status ENUM('pending','approved','rejected','blocked') NOT NULL DEFAULT 'pending',
   created_ip VARCHAR(45) NOT NULL DEFAULT 'unknown',

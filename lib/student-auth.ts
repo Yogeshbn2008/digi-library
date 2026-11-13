@@ -15,6 +15,7 @@ export interface Student extends RowDataPacket {
   id: number;
   name: string;
   registration_no: string;
+  room_no: string | null;
 }
 
 export async function createStudentSession(studentId: number) {
@@ -46,7 +47,7 @@ export async function getCurrentStudent() {
   if (!token) return null;
 
   const [rows] = await pool.query<Student[]>(
-    `SELECT s.id, s.name, s.registration_no
+    `SELECT s.id, s.name, s.registration_no, s.room_no
      FROM student_sessions ss
      JOIN students s ON s.id = ss.student_id
      WHERE ss.token_hash = ? AND ss.expires_at > NOW() AND s.status = 'approved'`,

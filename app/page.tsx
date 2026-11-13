@@ -2,8 +2,8 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { searchBooks, getGenres } from "@/lib/books";
-import { canViewCatalog, getCurrentStudent } from "@/lib/student-auth";
-import { logoutStudent } from "./student-actions";
+import { canViewCatalog } from "@/lib/student-auth";
+import AccountNav from "@/components/AccountNav";
 import Pager from "@/components/Pager";
 
 type SearchParams = Promise<{ q?: string; genre?: string; page?: string }>;
@@ -21,7 +21,7 @@ export default function Home({ searchParams }: { searchParams: SearchParams }) {
           <p className="text-muted text-sm">Search and browse our book collection</p>
         </div>
         <Suspense fallback={null}>
-          <StudentNav />
+          <AccountNav />
         </Suspense>
       </div>
 
@@ -54,35 +54,35 @@ export default function Home({ searchParams }: { searchParams: SearchParams }) {
   );
 }
 
-async function StudentNav() {
-  const student = await getCurrentStudent();
+// async function StudentNav() {
+//   const student = await getCurrentStudent();
 
-  if (!student) {
-    return (
-      <div className="flex gap-2">
-        <Link href="/login" className="btn-secondary text-sm py-2 px-4">
-          Log in
-        </Link>
-        <Link href="/register" className="btn-primary text-sm py-2 px-4">
-          Request access
-        </Link>
-      </div>
-    );
-  }
-  return (
-    <div className="flex items-center gap-3">
-      <span className="badge badge-primary">👋 {student.name}</span>
-      <Link href="/my-books" className="btn-secondary text-sm py-2 px-4">
-        My books
-      </Link>
-      <form action={logoutStudent}>
-        <button className="btn-secondary text-sm py-2 px-4 text-danger hover:text-danger">
-          Log out
-        </button>
-      </form>
-    </div>
-  );
-}
+//   if (!student) {
+//     return (
+//       <div className="flex gap-2">
+//         <Link href="/login" className="btn-secondary text-sm py-2 px-4">
+//           Log in
+//         </Link>
+//         <Link href="/register" className="btn-primary text-sm py-2 px-4">
+//           Request access
+//         </Link>
+//       </div>
+//     );
+//   }
+//   return (
+//     <div className="flex items-center gap-3">
+//       <span className="badge badge-primary">👋 {student.name}</span>
+//       <Link href="/my-books" className="btn-secondary text-sm py-2 px-4">
+//         My books
+//       </Link>
+//       <form action={logoutStudent}>
+//         <button className="btn-secondary text-sm py-2 px-4 text-danger hover:text-danger">
+//           Log out
+//         </button>
+//       </form>
+//     </div>
+//   );
+// }
 
 async function Catalog({ searchParams }: { searchParams: SearchParams }) {
   if (!(await canViewCatalog())) redirect("/login");
